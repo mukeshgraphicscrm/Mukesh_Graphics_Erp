@@ -8,7 +8,7 @@ A modern, full-stack Enterprise Resource Planning (ERP) dashboard tailored for B
 - **Customer & Supplier Directory**: Manage B2B clients, outstanding ledgers, and suppliers.
 - **Comprehensive Modules**: Scalable backend and frontend architecture for:
   - **Quotations & Orders**: Seamlessly convert quotes to live orders.
-  - **Products & Materials**: Maintain a catalog of custom packaging products and raw materials.
+  - **Products & Materials**: Maintain a catalog of custom packaging products and raw materials
   - **Purchase & GRN**: Create and track purchase orders with suppliers.
   - **Production Jobs**: Track jobs through prepress, printing, and post-press.
   - **Dispatch**: Manage logistics, vehicles, drivers, and tracking statuses.
