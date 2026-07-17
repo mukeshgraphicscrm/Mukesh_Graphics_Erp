@@ -2,7 +2,7 @@
 
 A modern, full-stack Enterprise Resource Planning (ERP) dashboard tailored for B2B printing and packaging operations. This system provides a unified interface for managing customers, orders, inventory, production, artworks, and more.
 
-## 🚀 Features
+## 🚀 Feature
 
 - **Real-time Dashboard**: Interactive KPI metrics and visually rich charts (Orders, Revenue, Dispatches).
 - **Customer & Supplier Directory**: Manage B2B clients, outstanding ledgers, and suppliers.
