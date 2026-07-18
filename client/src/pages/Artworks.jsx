@@ -3,6 +3,7 @@ import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CustomSelect from '../components/CustomSelect';
 import { Plus, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../lib/api';
 
 export default function Artworks() {
@@ -51,12 +52,21 @@ export default function Artworks() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen]);
 
-  const handleModalSubmit = (e) => {
+  const handleModalSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting form:', formData, 'File:', selectedFile);
-    // In a real app, send formData and selectedFile to the backend here
-    alert(`Artwork "${formData.fileName}" saved successfully.`);
-    handleModalClose();
+    try {
+      const payload = {
+        ...formData,
+        uploadedAt: new Date().toISOString(),
+      };
+      const res = await api.post('/artworks', payload);
+      setData(prev => [res.data, ...prev]);
+      toast.success(`Artwork "${formData.fileName}" saved successfully.`);
+      handleModalClose();
+    } catch (err) {
+      console.error('Error saving artwork:', err);
+      toast.error('Failed to save artwork.');
+    }
   };
 
   const columns = [
