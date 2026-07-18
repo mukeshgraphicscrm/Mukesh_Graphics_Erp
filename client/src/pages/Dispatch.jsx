@@ -72,9 +72,9 @@ export default function Dispatch() {
                 setDispatchToEdit(null);
                 setIsModalOpen(true);
               }}
-              className="bg-[#1b2f63] hover:bg-[#112046] text-white px-5 py-2.5 rounded-full text-[13px] font-medium transition-colors shadow-sm flex items-center"
+              className="btn-add"
             >
-              <Plus className="w-4 h-4 mr-2" /> Schedule Dispatch
+              <Plus className="w-4 h-4 mr-1" /> <span>Schedule Dispatch</span>
             </button>
           }
           columns={columns}

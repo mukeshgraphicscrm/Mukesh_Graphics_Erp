@@ -93,10 +93,10 @@ export default function Customers() {
               setCustomerToEdit(null);
               setIsModalOpen(true);
             }}
-            className="bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white px-5 py-2.5 rounded-full font-medium transition-colors shadow-sm flex items-center text-[13px]"
+            className="btn-add"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Customer
+            <Plus className="w-4 h-4 mr-1" />
+            <span>Add Customer</span>
           </button>
         }
         columns={columns}

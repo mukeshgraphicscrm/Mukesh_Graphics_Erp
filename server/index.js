@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const multer = require('multer');
 require('dotenv').config();
 const { initializeApp, cert } = require('firebase-admin/app');
 
@@ -38,10 +40,34 @@ const dashboardRouter = require('./routes/dashboard');
 // Dashboard metrics
 app.use('/api/dashboard', dashboardRouter);
 
+// Set up static folder for uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
+
+// File upload endpoint
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const fileUrl = `/uploads/${req.file.filename}`;
+  res.json({ url: fileUrl, filename: req.file.originalname });
+});
+
 // Module CRUD routes
 const collections = [
-  'customers', 'leads', 'quotations', 'orders', 'products', 
-  'artworks', 'productionJobs', 'inventory', 'suppliers', 
+  'customers', 'leads', 'quotations', 'orders', 'products',
+  'artworks', 'productionJobs', 'inventory', 'suppliers',
   'purchaseOrders', 'grn', 'dispatches', 'invoices'
 ];
 

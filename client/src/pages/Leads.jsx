@@ -75,9 +75,9 @@ export default function Leads() {
           </button>
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-brand-primary hover:bg-brand-primarydark text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center shadow-sm"
+            className="btn-add"
           >
-            <Plus className="w-4 h-4 mr-2" /> Add Lead
+            <Plus className="w-4 h-4 mr-1" /> <span>Add Lead</span>
           </button>
         </div>
       </div>

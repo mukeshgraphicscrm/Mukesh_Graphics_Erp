@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreateOrderModal from '../components/CreateOrderModal';
@@ -67,9 +68,10 @@ export default function Orders() {
               setOrderToEdit(null);
               setIsModalOpen(true);
             }}
-            className="bg-brand-primary hover:bg-brand-primarydark text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm"
+            className="btn-add"
           >
-            + New Order
+            <Plus className="w-4 h-4 mr-1" />
+            <span>New Order</span>
           </button>
         }
         columns={columns}

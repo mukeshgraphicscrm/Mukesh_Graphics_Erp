@@ -11,6 +11,7 @@ export default function Artworks() {
   const [customers, setCustomers] = useState({});
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     fileName: '',
     customerId: '',
@@ -37,6 +38,7 @@ export default function Artworks() {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+    setEditingId(null);
     setFormData({ fileName: '', customerId: '', version: 'v1.0', status: 'Under Review' });
     setSelectedFile(null);
   };
@@ -55,13 +57,31 @@ export default function Artworks() {
   const handleModalSubmit = async (e) => {
     e.preventDefault();
     try {
+      let fileUrl = '';
+      if (selectedFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', selectedFile);
+        const uploadRes = await api.post('/upload', formDataUpload, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        fileUrl = uploadRes.data.url;
+      }
+
       const payload = {
         ...formData,
-        uploadedAt: new Date().toISOString(),
+        fileUrl: fileUrl || formData.fileUrl,
+        uploadedAt: formData.uploadedAt || new Date().toISOString(),
       };
-      const res = await api.post('/artworks', payload);
-      setData(prev => [res.data, ...prev]);
-      toast.success(`Artwork "${formData.fileName}" saved successfully.`);
+      
+      if (editingId) {
+        const res = await api.put(`/artworks/${editingId}`, payload);
+        setData(prev => prev.map(item => item.id === editingId ? res.data : item));
+        toast.success(`Artwork "${formData.fileName}" updated successfully.`);
+      } else {
+        const res = await api.post('/artworks', payload);
+        setData(prev => [res.data, ...prev]);
+        toast.success(`Artwork "${formData.fileName}" saved successfully.`);
+      }
       handleModalClose();
     } catch (err) {
       console.error('Error saving artwork:', err);
@@ -69,8 +89,40 @@ export default function Artworks() {
     }
   };
 
+  const handleRowClick = (row) => {
+    setEditingId(row.id);
+    setFormData({
+      fileName: row.fileName,
+      customerId: row.customerId,
+      version: row.version,
+      status: row.status,
+      fileUrl: row.fileUrl,
+      uploadedAt: row.uploadedAt,
+    });
+    setIsModalOpen(true);
+  };
+
   const columns = [
-    { header: 'File Name', accessor: row => row.fileName, render: row => <span className="font-medium text-brand-line">{row.fileName}</span> },
+    { 
+      header: 'File Name', 
+      accessor: row => row.fileName, 
+      render: row => {
+        const baseUrl = api.defaults.baseURL.replace(/\/api$/, '');
+        return row.fileUrl ? (
+          <a 
+            href={`${baseUrl}${row.fileUrl}`} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="font-medium text-brand-line hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {row.fileName}
+          </a>
+        ) : (
+          <span className="font-medium text-brand-line">{row.fileName}</span>
+        );
+      }
+    },
     { header: 'Customer', accessor: row => customers[row.customerId]?.name || row.customerId },
     { header: 'Version', accessor: row => row.version, render: row => <span className="text-gray-500">{row.version}</span> },
     { header: 'Uploaded At', accessor: row => new Date(row.uploadedAt).toLocaleDateString('en-IN') },
@@ -89,7 +141,7 @@ export default function Artworks() {
           actionButton={
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center space-x-2 bg-[#0f172a] hover:bg-[#1e293b] text-white px-4 py-2 rounded-lg text-[13px] font-medium transition-colors shadow-sm"
+              className="btn-add"
             >
               <Plus className="w-4 h-4" />
               <span>Upload Artwork</span>
@@ -97,6 +149,7 @@ export default function Artworks() {
           }
           columns={columns}
           data={data}
+          onRowClick={handleRowClick}
         />
       </div>
 
@@ -105,7 +158,7 @@ export default function Artworks() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">Add New Artwork</h3>
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? 'Edit Artwork' : 'Add New Artwork'}</h3>
               <button onClick={handleModalClose} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
@@ -125,7 +178,7 @@ export default function Artworks() {
                     }
                   }}
                   accept=".pdf,.ai,.psd,.indd,image/*"
-                  required
+                  required={!editingId}
                 />
               </div>
 
@@ -194,7 +247,7 @@ export default function Artworks() {
                   type="submit"
                   className="px-4 py-2 text-sm font-medium text-white bg-[#0f172a] hover:bg-[#1e293b] rounded-lg transition-colors"
                 >
-                  Save Artwork
+                  {editingId ? 'Update Artwork' : 'Save Artwork'}
                 </button>
               </div>
             </form>

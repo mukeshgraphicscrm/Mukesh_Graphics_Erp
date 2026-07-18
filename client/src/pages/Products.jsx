@@ -52,9 +52,9 @@ export default function Products() {
             setProductToEdit(null);
             setIsAddModalOpen(true);
           }}
-          className="bg-[#1b2f63] hover:bg-[#112046] text-white px-5 py-2.5 rounded-full font-medium transition-colors flex items-center shadow-sm w-fit text-sm"
+          className="btn-add w-fit"
         >
-          <Plus className="w-4 h-4 mr-2" /> Add Product
+          <Plus className="w-4 h-4 mr-1" /> <span>Add Product</span>
         </button>
       </div>
 
