@@ -56,8 +56,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
             }}
             className={({ isActive }) => cn(
               "flex items-center px-4 py-[14px] mx-4 rounded-xl transition-all duration-200 gap-4 group",
-              isActive
-                ? "bg-[#141d30] shadow-[inset_3px_0_0_0_#E8A33D]"
+              isActive 
+                ? "bg-[#1A2740] border border-[#E8A33D]/30 shadow-[inset_3px_0_0_0_#E8A33D]" 
                 : "hover:bg-white/5 border border-transparent"
             )}
           >
