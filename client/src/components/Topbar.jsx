@@ -28,14 +28,6 @@ export default function Topbar({ onMenuClick }) {
 
       {/* Right Side */}
       <div className="flex items-center space-x-4 md:space-x-6">
-        {/* Notifications */}
-        <button className="relative p-1 text-gray-400 hover:text-gray-500 focus:outline-none transition-colors">
-          <span className="sr-only">View notifications</span>
-          <Bell className="h-6 w-6" />
-          {/* Red dot badge */}
-          <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-        </button>
-
         {/* Profile */}
         <div className="flex items-center space-x-3 border-l border-gray-200 pl-4 md:pl-6">
           <div className="text-right hidden sm:block">
