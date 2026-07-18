@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
-import { UploadCloud } from 'lucide-react';
+import CustomSelect from '../components/CustomSelect';
+import { Plus, X } from 'lucide-react';
 import api from '../lib/api';
 
 export default function Artworks() {
   const [data, setData] = useState([]);
   const [customers, setCustomers] = useState({});
   const [loading, setLoading] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    fileName: '',
+    customerId: '',
+    version: 'v1.0',
+    status: 'Under Review'
+  });
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -26,22 +34,29 @@ export default function Artworks() {
     });
   }, []);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setFormData({ fileName: '', customerId: '', version: 'v1.0', status: 'Under Review' });
+    setSelectedFile(null);
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        handleModalClose();
+      }
+    };
 
-  const handleDrop = (e) => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
+  const handleModalSubmit = (e) => {
     e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    console.log('Files dropped:', files);
-    // In a real app, upload these to Firebase Storage here
-    alert(`Received ${files.length} file(s). Upload logic to Firebase Storage goes here.`);
+    console.log('Submitting form:', formData, 'File:', selectedFile);
+    // In a real app, send formData and selectedFile to the backend here
+    alert(`Artwork "${formData.fileName}" saved successfully.`);
+    handleModalClose();
   };
 
   const columns = [
@@ -55,32 +70,127 @@ export default function Artworks() {
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Artworks...</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Upload Zone */}
-      <div
-        className={`border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center transition-colors bg-white ${isDragging ? 'border-brand-accent bg-brand-accent/5' : 'border-gray-300 hover:border-gray-400'
-          }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <UploadCloud className={`w-12 h-12 mb-4 ${isDragging ? 'text-brand-accent' : 'text-gray-400'}`} />
-        <h3 className="text-lg font-medium text-gray-900">Drop artwork files here</h3>
-        <p className="text-sm text-gray-500 mt-1">Supports .pdf, .ai, .psd, .indd up to 200 MB per file</p>
-        <button className="mt-4 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
-          Browse Files
-        </button>
-      </div>
-
+    <div>
       {/* Data Table */}
-      <div className="h-[calc(100vh-24rem)]">
+      <div className="h-[calc(100vh-12rem)]">
         <DataTable
           title="Artwork Management"
           subtitle="Manage all customer artwork assets and approval statuses."
+          actionButton={
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center space-x-2 bg-[#0f172a] hover:bg-[#1e293b] text-white px-4 py-2 rounded-lg text-[13px] font-medium transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Upload Artwork</span>
+            </button>
+          }
           columns={columns}
           data={data}
         />
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">Add New Artwork</h3>
+              <button onClick={handleModalClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleModalSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Artwork File</label>
+                <input
+                  type="file"
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 border border-gray-300 rounded-lg"
+                  onChange={e => {
+                    const file = e.target.files[0];
+                    setSelectedFile(file);
+                    if (file) {
+                      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+                      setFormData(prev => ({ ...prev, fileName: nameWithoutExt }));
+                    }
+                  }}
+                  accept=".pdf,.ai,.psd,.indd,image/*"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">File Name</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
+                  required
+                  placeholder="e.g., IceCream_Box_v2"
+                  value={formData.fileName}
+                  onChange={e => setFormData({ ...formData, fileName: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                <CustomSelect
+                  name="customerId"
+                  value={formData.customerId}
+                  onChange={e => setFormData({ ...formData, customerId: e.target.value })}
+                  options={Object.values(customers).map(c => ({ label: c.name, value: c.id }))}
+                  placeholder="Select a customer"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Version</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
+                    required
+                    placeholder="e.g., v1.0"
+                    value={formData.version}
+                    onChange={e => setFormData({ ...formData, version: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <CustomSelect
+                    name="status"
+                    value={formData.status}
+                    onChange={e => setFormData({ ...formData, status: e.target.value })}
+                    options={[
+                      { label: 'Under Review', value: 'Under Review' },
+                      { label: 'Approved', value: 'Approved' },
+                      { label: 'Correction Required', value: 'Correction Required' },
+                      { label: 'Production Released', value: 'Production Released' }
+                    ]}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-8 pt-4">
+                <button
+                  type="button"
+                  onClick={handleModalClose}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#0f172a] hover:bg-[#1e293b] rounded-lg transition-colors"
+                >
+                  Save Artwork
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

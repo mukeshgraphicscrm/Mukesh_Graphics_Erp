@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import CustomSelect from './CustomSelect';
 
 export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
   const [formData, setFormData] = useState({
@@ -53,7 +54,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">Add New Lead</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -133,19 +134,19 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
-              <select
+              <CustomSelect
                 name="stage"
                 value={formData.stage}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
-              >
-                <option value="New Inquiry">New Inquiry</option>
-                <option value="Follow Up">Follow Up</option>
-                <option value="Quotation Sent">Quotation Sent</option>
-                <option value="Negotiation">Negotiation</option>
-                <option value="Won">Won</option>
-                <option value="Lost">Lost</option>
-              </select>
+                options={[
+                  { label: 'New Inquiry', value: 'New Inquiry' },
+                  { label: 'Follow Up', value: 'Follow Up' },
+                  { label: 'Quotation Sent', value: 'Quotation Sent' },
+                  { label: 'Negotiation', value: 'Negotiation' },
+                  { label: 'Won', value: 'Won' },
+                  { label: 'Lost', value: 'Lost' }
+                ]}
+              />
             </div>
           </div>
 

@@ -42,7 +42,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       <input type="hidden" name={name} value={value} required={required} />
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto focus:outline-none">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto focus:outline-none scrollbar-thin scrollbar-thumb-gray-300">
           {options.length === 0 ? (
             <div className="px-3 py-2 text-gray-500 text-sm">No options available</div>
           ) : (
