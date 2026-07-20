@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, User, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { Settings, User, Calendar, Clock, AlertTriangle, Plus } from 'lucide-react';
 import api from '../lib/api';
-
+import CreateJobModal from '../components/CreateJobModal';
 const stages = [
   { id: 1, name: 'Printing', key: 'Printing' },
   { id: 2, name: 'Coating', key: 'Coating' },
@@ -14,6 +14,13 @@ const stages = [
 export default function Production() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+
+  const handleEditJob = (job) => {
+    setEditingJob(job);
+    setIsCreateModalOpen(true);
+  };
 
   useEffect(() => {
     api.get('/productionJobs')
@@ -30,11 +37,21 @@ export default function Production() {
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Production Floor...</div>;
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Production Floor</h2>
-        <p className="text-sm text-gray-500 mt-1">Live tracking of all running job cards.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Production Floor</h2>
+          <p className="text-sm text-gray-500 mt-1">Live tracking of all running job cards.</p>
+        </div>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="btn-add"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Job</span>
+        </button>
       </div>
 
       {/* KPI Cards */}
@@ -91,50 +108,58 @@ export default function Production() {
       {/* Active Job Cards Grid */}
       <div>
         <h3 className="text-lg font-bold text-gray-900 mb-4">Active Job Cards</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {jobs.map((job) => (
-            <div key={job.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-              <div className="p-5 border-b border-gray-100 flex justify-between items-start">
-                <div>
-                  <span className="inline-block px-2 py-1 bg-semantic-info-bg text-semantic-info-text text-xs font-semibold rounded-md mb-2">
-                    {job.stage}
-                  </span>
-                  <h4 className="font-bold text-gray-900 text-lg">{job.jobCardNo}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{job.productName}</p>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {jobs.slice().sort((a, b) => (a.jobCardNo || '').localeCompare(b.jobCardNo || '')).map((job) => (
+            <div 
+              key={job.id} 
+              onClick={() => handleEditJob(job)}
+              className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:ring-2 hover:ring-brand-accent/20 cursor-pointer transition-all p-6"
+            >
+              {/* Top Row */}
+              <div className="flex justify-between items-start mb-4">
+                <span className="text-sm font-bold text-slate-800 tracking-wide">{job.jobCardNo}</span>
+                <span className="inline-block px-3 py-1 bg-sky-100 text-sky-700 text-xs font-semibold rounded-full">
+                  {job.stage}
+                </span>
+              </div>
+              
+              {/* Title Row */}
+              <div className="mb-6">
+                <h4 className="font-bold text-gray-900 text-xl">{job.productName}</h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  {job.customerName || 'Customer Name'} · {job.units ? job.units.toLocaleString('en-IN') : 0} units
+                </p>
+              </div>
+
+              {/* Progress */}
+              <div className="mb-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-500">Progress</span>
+                  <span className="font-bold text-gray-900">{job.progress}%</span>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Units</p>
-                  <p className="font-semibold text-gray-900">{job.units.toLocaleString('en-IN')}</p>
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div
+                    className="bg-amber-500 h-2 rounded-full"
+                    style={{ width: `${job.progress || 0}%` }}
+                  ></div>
                 </div>
               </div>
 
-              <div className="p-5 bg-gray-50 space-y-4">
+              {/* Bottom Info */}
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
                 <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-500 font-medium">Progress</span>
-                    <span className="text-brand-accent font-bold">{job.progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                    <div 
-                      className="bg-brand-accent h-1.5 rounded-full" 
-                      style={{ width: `${job.progress}%` }}
-                    ></div>
-                  </div>
+                  <p className="text-xs text-gray-500 mb-1">Machine</p>
+                  <p className="text-sm font-medium text-gray-900 truncate" title={job.machine}>{job.machine || '-'}</p>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center text-sm">
-                    <Settings className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-gray-700 truncate" title={job.machine}>{job.machine}</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <User className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-gray-700">{job.operator}</span>
-                  </div>
-                  <div className="col-span-2 flex items-center text-sm border-t border-gray-200 pt-3 mt-1">
-                    <Calendar className="w-4 h-4 text-amber-500 mr-2" />
-                    <span className="text-gray-700">Deadline: <span className="font-semibold text-gray-900">{new Date(job.deadline).toLocaleDateString('en-IN')}</span></span>
-                  </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Operator</p>
+                  <p className="text-sm font-medium text-gray-900 truncate" title={job.operator}>{job.operator || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Deadline</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {job.deadline ? new Date(job.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -146,6 +171,19 @@ export default function Production() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+
+      <CreateJobModal
+        isOpen={isCreateModalOpen}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingJob(null);
+        }}
+        onJobAdded={(newJob) => setJobs(prev => [...prev, newJob])}
+        onJobUpdated={(updatedJob) => setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j))}
+        jobs={jobs}
+        jobToEdit={editingJob}
+      />
+    </>
   );
 }
