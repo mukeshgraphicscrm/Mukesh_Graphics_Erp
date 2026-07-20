@@ -56,68 +56,68 @@ export default function Purchase() {
   return (
     <>
       <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Purchase & GRN</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage suppliers, purchase orders and goods receipts.</p>
-        </div>
-        <button
-          onClick={() => {
-            setPoToEdit(null);
-            setIsAddPOModalOpen(true);
-          }}
-          className="btn-add"
-        >
-          <Plus className="w-4 h-4 mr-1" /> <span>New Purchase Order</span>
-        </button>
-      </div>
-
-      {/* Approved Suppliers Chips */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Approved Suppliers</h3>
+        {/* Page Header */}
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Purchase & GRN</h2>
+            <p className="text-sm text-gray-500 mt-1">Manage suppliers, purchase orders and goods receipts.</p>
+          </div>
           <button
-            onClick={() => setIsAddSupplierModalOpen(true)}
+            onClick={() => {
+              setPoToEdit(null);
+              setIsAddPOModalOpen(true);
+            }}
             className="btn-add"
           >
-            <Plus className="w-4 h-4 mr-1" /> <span>Add Supplier</span>
+            <Plus className="w-4 h-4 mr-1" /> <span>New Purchase Order</span>
           </button>
         </div>
-        <div className="flex flex-wrap gap-3">
-          {Object.values(suppliers).length > 0 ? (
-            Object.values(suppliers).map(supplier => (
-              <span key={supplier.id} className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-full text-[13px] font-medium shadow-sm hover:bg-gray-50 cursor-pointer transition-colors">
-                {supplier.name}
-              </span>
-            ))
-          ) : (
-            <span className="text-sm text-gray-500">No approved suppliers found.</span>
-          )}
+
+        {/* Approved Suppliers Chips */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Approved Suppliers</h3>
+            <button
+              onClick={() => setIsAddSupplierModalOpen(true)}
+              className="btn-add"
+            >
+              <Plus className="w-4 h-4 mr-1" /> <span>Add Supplier</span>
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {Object.values(suppliers).length > 0 ? (
+              Object.values(suppliers).map(supplier => (
+                <span key={supplier.id} className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-full text-[13px] font-medium shadow-sm hover:bg-gray-50 cursor-pointer transition-colors">
+                  {supplier.name}
+                </span>
+              ))
+            ) : (
+              <span className="text-sm text-gray-500">No approved suppliers found.</span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* PO Table */}
-      <div>
-        <DataTable
-          title="Purchase Orders"
-          columns={poColumns}
-          data={poData}
-          onRowClick={(row) => {
-            setPoToEdit(row);
-            setIsAddPOModalOpen(true);
-          }}
-        />
-      </div>
+        {/* PO Table */}
+        <div>
+          <DataTable
+            title="Purchase Orders"
+            columns={poColumns}
+            data={poData}
+            onRowClick={(row) => {
+              setPoToEdit(row);
+              setIsAddPOModalOpen(true);
+            }}
+          />
+        </div>
 
-      {/* GRN Table */}
-      <div>
-        <DataTable
-          title="Goods Receipt Notes"
-          columns={grnColumns}
-          data={grnData}
-        />
-      </div>
+        {/* GRN Table */}
+        <div>
+          <DataTable
+            title="Goods Receipt Notes"
+            columns={grnColumns}
+            data={grnData}
+          />
+        </div>
 
       </div>
       <CreatePurchaseOrderModal
@@ -127,8 +127,10 @@ export default function Purchase() {
           setPoToEdit(null);
         }}
         suppliers={suppliers}
+        pos={poData}
         onPoCreated={(newPo) => setPoData(prev => [...prev, newPo])}
         onPoUpdated={(updatedPo) => setPoData(prev => prev.map(po => po.id === updatedPo.id ? updatedPo : po))}
+        onGrnCreated={(newGrn) => setGrnData(prev => [newGrn, ...prev])}
         poToEdit={poToEdit}
       />
       <AddSupplierModal

@@ -146,7 +146,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-8">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-visible my-8">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">{jobToEdit ? 'Edit Job' : 'Create Job'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">

@@ -4,8 +4,9 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 
-export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, suppliers, poToEdit }) {
+export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, onGrnCreated, suppliers, poToEdit, pos = [] }) {
   const [formData, setFormData] = useState({
+    poNo: '',
     supplierId: '',
     material: '',
     quantity: '',
@@ -30,23 +31,33 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     if (isOpen) {
       if (poToEdit) {
         setFormData({
+          poNo: poToEdit.poNo || '',
           supplierId: poToEdit.supplierId || '',
           material: poToEdit.material || '',
           quantity: poToEdit.quantity || '',
           amount: poToEdit.amount || '',
           status: poToEdit.status || 'Ordered',
         });
-      } else if (Object.keys(suppliers).length > 0) {
-        setFormData({
-          supplierId: Object.values(suppliers)[0].id,
-          material: '',
-          quantity: '',
-          amount: '',
-          status: 'Ordered',
-        });
       } else {
+        const currentYear = new Date().getFullYear();
+        const prefix = `PO-${currentYear}-`;
+        
+        let nextNum = 1;
+        if (pos && pos.length > 0) {
+          const currentPos = pos.filter(p => p.poNo && p.poNo.startsWith(prefix));
+          if (currentPos.length > 0) {
+            const nums = currentPos.map(p => {
+              const parts = p.poNo.split('-');
+              return parseInt(parts[2], 10) || 0;
+            });
+            nextNum = Math.max(...nums) + 1;
+          }
+        }
+        const nextPoNo = `${prefix}${String(nextNum).padStart(3, '0')}`;
+
         setFormData({
-          supplierId: '',
+          poNo: nextPoNo,
+          supplierId: Object.keys(suppliers).length > 0 ? Object.values(suppliers)[0].id : '',
           material: '',
           quantity: '',
           amount: '',
@@ -54,7 +65,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         });
       }
     }
-  }, [isOpen, suppliers, poToEdit]);
+  }, [isOpen, suppliers, poToEdit, pos]);
 
   if (!isOpen) return null;
 
@@ -78,11 +89,44 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         const res = await api.put(`/purchaseOrders/${poToEdit.id}`, payload);
         if (onPoUpdated) onPoUpdated(res.data);
         toast.success('Purchase order updated successfully!');
+        
+        if (payload.status === 'Received' && poToEdit.status !== 'Received') {
+          try {
+            const grnPayload = {
+              grnNo: `GRN-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+              poId: payload.poNo, // Using payload.poNo from the new editable field
+              supplierId: payload.supplierId,
+              material: payload.material,
+              date: new Date().toISOString()
+            };
+            const grnRes = await api.post('/grn', grnPayload);
+            if (onGrnCreated) onGrnCreated(grnRes.data);
+            toast.success('Goods Receipt Note automatically generated!');
+          } catch (grnErr) {
+            console.error('Error creating GRN:', grnErr);
+          }
+        }
       } else {
-        payload.poNo = `PO-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         const res = await api.post('/purchaseOrders', payload);
         if (onPoCreated) onPoCreated(res.data);
         toast.success('Purchase order created successfully!');
+        
+        if (payload.status === 'Received') {
+          try {
+            const grnPayload = {
+              grnNo: `GRN-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+              poId: payload.poNo,
+              supplierId: payload.supplierId,
+              material: payload.material,
+              date: new Date().toISOString()
+            };
+            const grnRes = await api.post('/grn', grnPayload);
+            if (onGrnCreated) onGrnCreated(grnRes.data);
+            toast.success('Goods Receipt Note automatically generated!');
+          } catch (grnErr) {
+            console.error('Error creating GRN:', grnErr);
+          }
+        }
       }
 
       onClose();
@@ -108,7 +152,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-8">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-visible my-8">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">{poToEdit ? 'Edit Purchase Order' : 'New Purchase Order'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -120,6 +164,19 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">PO # *</label>
+              <input
+                type="text"
+                name="poNo"
+                required
+                value={formData.poNo}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                placeholder="e.g. PO-2026-001"
+              />
+            </div>
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Supplier *</label>
               {supplierOptions.length > 0 ? (
