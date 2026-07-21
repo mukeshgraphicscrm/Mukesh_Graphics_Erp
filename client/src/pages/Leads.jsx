@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import api from '../lib/api';
 import AddLeadModal from '../components/AddLeadModal';
+import EditLeadModal from '../components/EditLeadModal';
 const columnsConfig = [
   { id: 'New Inquiry', label: 'New Inquiry', color: 'bg-blue-500' },
   { id: 'Follow Up', label: 'Follow Up', color: 'bg-amber-500' },
@@ -15,6 +16,8 @@ export default function Leads() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState(null);
 
   useEffect(() => {
     api.get('/leads')
@@ -49,6 +52,17 @@ export default function Leads() {
         console.error('Error updating lead stage:', err);
         // In a real app, revert the UI state here
       });
+  };
+
+  const handleLeadClick = (lead) => {
+    setEditingLead(lead);
+    setIsEditModalOpen(true);
+  };
+
+  const handleLeadUpdated = (updatedLead) => {
+    setLeads(prev => prev.map(lead => 
+      lead.id === updatedLead.id ? updatedLead : lead
+    ));
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Leads...</div>;
@@ -117,7 +131,8 @@ export default function Leads() {
                       key={lead.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, lead.id)}
-                      className="bg-white p-3 rounded-md shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:border-brand-accent transition-colors"
+                      onClick={() => handleLeadClick(lead)}
+                      className="bg-white p-3 rounded-md shadow-sm border border-gray-200 cursor-pointer hover:border-brand-accent transition-colors"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900 text-sm leading-tight">{lead.company}</h4>
@@ -162,6 +177,15 @@ export default function Leads() {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
         onLeadAdded={(newLead) => setLeads(prev => [newLead, ...prev])} 
+      />
+      <EditLeadModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingLead(null);
+        }}
+        onLeadUpdated={handleLeadUpdated}
+        lead={editingLead}
       />
     </div>
   );
