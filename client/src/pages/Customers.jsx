@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, MapPin, Plus } from 'lucide-react';
+import { Phone, MapPin, Plus, Trash2 } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AddCustomerModal from '../components/AddCustomerModal';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import toast from 'react-hot-toast';
 import api from '../lib/api';
 
 export default function Customers() {
@@ -9,6 +11,9 @@ export default function Customers() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     api.get('/customers')
@@ -21,6 +26,29 @@ export default function Customers() {
         setLoading(false);
       });
   }, []);
+
+  const confirmDeleteCustomer = (customer, e) => {
+    e.stopPropagation();
+    setCustomerToDelete(customer);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!customerToDelete) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/customers/${customerToDelete.id}`);
+      setData((prev) => prev.filter(c => c.id !== customerToDelete.id));
+      toast.success('Customer deleted successfully!');
+      setDeleteModalOpen(false);
+      setCustomerToDelete(null);
+    } catch (err) {
+      console.error('Error deleting customer:', err);
+      toast.error('Failed to delete customer.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const columns = [
     { header: 'Customer', accessor: row => row.name, render: row => {
@@ -69,6 +97,17 @@ export default function Customers() {
     { header: 'Total Business', accessor: row => row.totalBusiness, render: row => (
       <span className="font-bold text-gray-900 text-[13px]">₹{row.totalBusiness?.toLocaleString('en-IN') || 0}</span>
     )},
+    { header: 'Actions', accessor: row => row.id, render: row => (
+      <div className="flex items-center space-x-2">
+        <button 
+          onClick={(e) => confirmDeleteCustomer(row, e)}
+          className="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors"
+          title="Delete Customer"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    )},
   ];
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Customers...</div>;
@@ -115,6 +154,17 @@ export default function Customers() {
         onCustomerAdded={handleCustomerAdded}
         onCustomerUpdated={handleCustomerUpdated}
         customerToEdit={customerToEdit}
+      />
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setCustomerToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={isDeleting}
+        title="Delete Customer"
+        message={`Are you sure you want to delete ${customerToDelete?.name}? This action cannot be undone.`}
       />
     </div>
   );
