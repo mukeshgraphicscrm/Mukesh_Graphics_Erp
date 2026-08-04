@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 
 export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, message, isLoading }) {
@@ -14,7 +15,7 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, 
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col transform transition-all">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
@@ -50,6 +51,7 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

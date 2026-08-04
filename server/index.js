@@ -68,7 +68,8 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 const collections = [
   'customers', 'leads', 'quotations', 'orders', 'products',
   'artworks', 'productionJobs', 'inventory', 'suppliers',
-  'purchaseOrders', 'grn', 'dispatches', 'invoices', 'categories'
+  'purchaseOrders', 'grn', 'dispatches', 'invoices', 'categories',
+  'users'
 ];
 
 collections.forEach(collection => {
