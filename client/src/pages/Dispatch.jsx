@@ -29,21 +29,22 @@ export default function Dispatch() {
   }, []);
 
   const columns = [
-    { header: 'DISPATCH #', accessor: row => row.dispatchNo, render: row => <span className="font-bold text-gray-900 text-[13px]">{row.dispatchNo}</span> },
+    { header: 'DISPATCH No.', accessor: row => row.dispatchNo, render: row => <span className="font-bold text-gray-900 text-[13px]">{row.dispatchNo}</span> },
     { header: 'CUSTOMER', accessor: row => row.customer || customers[row.customerId]?.name || row.customerId, render: row => <span className="text-[13px] text-gray-700 font-medium">{row.customer || customers[row.customerId]?.name || row.customerId}</span> },
-    { header: 'VEHICLE', accessor: row => row.vehicleNo, render: row => (
+    {
+      header: 'TRANSPORTER', accessor: row => row.vehicleNo, render: row => (
         <div className="flex items-center text-gray-600 text-[13px]">
           <Truck className="w-4 h-4 mr-2 text-gray-400" />
           <span className="font-mono">{row.vehicleNo}</span>
         </div>
-      ) 
+      )
     },
-    { header: 'DRIVER', accessor: row => row.driver, render: row => <span className="text-[13px] text-gray-700">{row.driver}</span> },
+    { header: 'BOOKING LOCATION', accessor: row => row.driver, render: row => <span className="text-[13px] text-gray-700">{row.driver}</span> },
     { header: 'DATE', accessor: row => new Date(row.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), render: row => <span className="text-[13px] text-gray-500">{new Date(row.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
     { header: 'STATUS', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
-    { 
-      header: 'ACTIONS', 
-      accessor: () => null, 
+    {
+      header: 'ACTIONS',
+      accessor: () => null,
       render: () => (
         <div className="flex space-x-3">
           <button className="text-gray-400 hover:text-[#1b2f63] transition-colors" title="View Challan">
@@ -53,7 +54,7 @@ export default function Dispatch() {
             <MapPin className="w-4 h-4" />
           </button>
         </div>
-      ) 
+      )
     },
   ];
 
@@ -64,10 +65,10 @@ export default function Dispatch() {
       <div className="h-[calc(100vh-8rem)]">
         <DataTable
           title="Dispatch"
-          subtitle="Vehicles, drivers and delivery challans — every shipment tracked."
-          searchPlaceholder="Search dispatch #, vehicle, driver..."
+          subtitle="Transporters, locations and delivery challans — every shipment tracked."
+          searchPlaceholder="Search dispatch #, transporter, location..."
           actionButton={
-            <button 
+            <button
               onClick={() => {
                 setDispatchToEdit(null);
                 setIsModalOpen(true);

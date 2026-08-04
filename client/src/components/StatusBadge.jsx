@@ -5,10 +5,10 @@ export default function StatusBadge({ status }) {
   // Mapping status strings to semantic categories based on the prompt rules
   let semantic = 'info'; // default
 
-  const successStatuses = ['Paid', 'Completed', 'Approved', 'In Stock', 'Delivered', 'Received', 'Won'];
+  const successStatuses = ['Paid', 'Completed', 'Approved', 'In Stock', 'Delivered', 'Received', 'Won', 'Dispatched'];
   const warningStatuses = ['Pending', 'Loading', 'Low Stock', 'At Risk', 'Draft', 'Ordered', 'Follow Up', 'Negotiation'];
   const dangerStatuses = ['Overdue', 'Delayed', 'Low Stock alert', 'Correction Required', 'Lost'];
-  const infoStatuses = ['In Production', 'Sent', 'Scheduled', 'Running', 'Under Review', 'In Transit', 'New Inquiry', 'Printing', 'Coating', 'Lamination', 'Die Cutting', 'Folding', 'Packing', 'QC Pending'];
+  const infoStatuses = ['In Production', 'Sent', 'Scheduled', 'Running', 'Under Review', 'In Transit', 'New Inquiry', 'Printing', 'Lamination', 'Punching', 'Striping', 'Pasting', 'Ready To Dispatch', 'QC Pending', 'Job Preparation', 'Ready For Dispatch'];
 
   if (successStatuses.includes(status)) semantic = 'success';
   else if (warningStatuses.includes(status)) semantic = 'warning';

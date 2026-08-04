@@ -85,11 +85,12 @@ router.get('/kpi', async (req, res) => {
       ],
       productionStages: [
         { name: 'Printing', value: runningCount > 0 ? 1 : 0 },
-        { name: 'Coating', value: 0 },
         { name: 'Lamination', value: 0 },
-        { name: 'Die Cutting', value: 0 },
-        { name: 'Folding', value: 0 },
-        { name: 'Packing', value: completedCount > 0 ? 1 : 0 },
+        { name: 'Punching', value: 0 },
+        { name: 'Striping', value: 0 },
+        { name: 'Pasting', value: 0 },
+        { name: 'Ready To Dispatch', value: 0 },
+        { name: 'Dispatched', value: completedCount > 0 ? 1 : 0 },
       ],
       recentActivities: [
         { id: 1, text: 'Dashboard statistics updated.', time: 'Just now' }

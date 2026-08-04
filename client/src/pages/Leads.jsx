@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, ChevronDown } from 'lucide-react';
 import api from '../lib/api';
 import AddLeadModal from '../components/AddLeadModal';
 import EditLeadModal from '../components/EditLeadModal';
+import ViewLeadModal from '../components/ViewLeadModal';
+import LostReasonModal from '../components/LostReasonModal';
 const columnsConfig = [
   { id: 'New Inquiry', label: 'New Inquiry', color: 'bg-blue-500' },
   { id: 'Follow Up', label: 'Follow Up', color: 'bg-amber-500' },
   { id: 'Quotation Sent', label: 'Quotation Sent', color: 'bg-brand-navy' },
-  { id: 'Negotiation', label: 'Negotiation', color: 'bg-orange-500' },
   { id: 'Won', label: 'Won', color: 'bg-green-500' },
   { id: 'Lost', label: 'Lost', color: 'bg-red-500' },
 ];
@@ -17,7 +18,11 @@ export default function Leads() {
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isLostReasonModalOpen, setIsLostReasonModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
+  const [viewingLead, setViewingLead] = useState(null);
+  const [pendingLostLead, setPendingLostLead] = useState(null);
 
   useEffect(() => {
     api.get('/leads')
@@ -31,38 +36,37 @@ export default function Leads() {
       });
   }, []);
 
-  const handleDragStart = (e, id) => {
-    e.dataTransfer.setData('leadId', id);
-  };
+  const [expandedStages, setExpandedStages] = useState({
+    'New Inquiry': true,
+  });
+  const [activeDropdownLeadId, setActiveDropdownLeadId] = useState(null);
 
-  const handleDragOver = (e) => {
-    e.preventDefault(); // Necessary to allow dropping
-  };
+  useEffect(() => {
+    const handleClickOutside = () => setActiveDropdownLeadId(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
-  const handleDrop = (e, newStage) => {
-    const id = e.dataTransfer.getData('leadId');
-    // Optimistic UI update
-    setLeads(prev => prev.map(lead => 
-      lead.id === id ? { ...lead, stage: newStage } : lead
-    ));
-
-    // Update in backend
-    api.put(`/leads/${id}`, { stage: newStage })
-      .catch(err => {
-        console.error('Error updating lead stage:', err);
-        // In a real app, revert the UI state here
-      });
+  const toggleStage = (stageId) => {
+    setExpandedStages(prev => ({
+      ...prev,
+      [stageId]: !prev[stageId]
+    }));
   };
 
   const handleLeadClick = (lead) => {
-    setEditingLead(lead);
-    setIsEditModalOpen(true);
+    setViewingLead(lead);
+    setIsViewModalOpen(true);
   };
 
   const handleLeadUpdated = (updatedLead) => {
-    setLeads(prev => prev.map(lead => 
+    setLeads(prev => prev.map(lead =>
       lead.id === updatedLead.id ? updatedLead : lead
     ));
+  };
+
+  const handleLeadDeleted = (deletedLeadId) => {
+    setLeads(prev => prev.filter(lead => lead.id !== deletedLeadId));
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Leads...</div>;
@@ -78,16 +82,16 @@ export default function Leads() {
         <div className="flex items-center space-x-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search leads..." 
+            <input
+              type="text"
+              placeholder="Search leads..."
               className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-accent"
             />
           </div>
           <button className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors flex items-center">
             <Filter className="w-4 h-4 mr-2" /> Filter
           </button>
-          <button 
+          <button
             onClick={() => setIsAddModalOpen(true)}
             className="btn-add"
           >
@@ -96,96 +100,154 @@ export default function Leads() {
         </div>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto pb-4">
-        <div className="flex gap-4 h-full min-w-max">
-          {columnsConfig.map(col => {
-            const columnLeads = leads.filter(l => l.stage === col.id);
-            const totalValue = columnLeads.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
-            
-            return (
-              <div 
-                key={col.id} 
-                className="w-80 flex flex-col bg-gray-100 rounded-lg overflow-hidden border border-gray-200"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, col.id)}
-              >
-                {/* Column Header */}
-                <div className={`h-1 w-full ${col.color}`}></div>
-                <div className="p-3 bg-white border-b border-gray-200 flex justify-between items-center">
-                  <h3 className="font-semibold text-gray-700 text-sm">{col.label}</h3>
-                  <div className="flex flex-col items-end">
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
-                      {columnLeads.length}
-                    </span>
-                    <span className="text-[10px] text-gray-500 mt-0.5">
-                      ₹{totalValue.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
+      {/* Vertical Accordion List */}
+      <div className="flex-1 overflow-y-auto pb-4 px-1 space-y-4">
+        {columnsConfig.map(col => {
+          const columnLeads = leads.filter(l => l.stage === col.id);
+          const isExpanded = expandedStages[col.id];
 
-                {/* Cards Container */}
-                <div className="flex-1 p-3 overflow-y-auto space-y-3">
-                  {columnLeads.map(lead => (
-                    <div 
-                      key={lead.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, lead.id)}
-                      onClick={() => handleLeadClick(lead)}
-                      className="bg-white p-3 rounded-md shadow-sm border border-gray-200 cursor-pointer hover:border-brand-accent transition-colors"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-gray-900 text-sm leading-tight">{lead.company}</h4>
-                        <span className="text-xs font-semibold text-brand-accent">
-                          ₹{(Number(lead.amount) || 0).toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500 mb-3">
-                        {lead.contactPerson} • {lead.city}
-                      </div>
-                      
-                      {lead.notes && (
-                        <div className="bg-gray-50 p-2 rounded text-[11px] text-gray-600 mb-3 border border-gray-100 line-clamp-2">
-                          {lead.notes}
+          return (
+            <div key={col.id} className="bg-white rounded-lg border border-gray-200 shadow-sm relative">
+              {/* Stage Header */}
+              <div 
+                className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg"
+                onClick={() => toggleStage(col.id)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${col.color}`}></div>
+                  <h3 className="font-bold text-gray-800 text-base">{col.label}</h3>
+                  <span className="bg-[#E8A33D]/10 text-[#E8A33D] px-2.5 py-0.5 rounded-full text-sm font-bold border border-[#E8A33D]/20">
+                    {columnLeads.length} Leads
+                  </span>
+                </div>
+                <div className="flex items-center gap-6">
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
+
+              {/* Expanded Content */}
+              {isExpanded && (
+                <div className="border-t border-gray-100 bg-gray-50/50 p-4">
+                  {columnLeads.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400 text-sm">No leads in this stage</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {columnLeads.map(lead => (
+                        <div
+                          key={lead.id}
+                          className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:border-[#E8A33D] transition-all cursor-pointer hover:shadow-md"
+                          onClick={() => handleLeadClick(lead)}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-bold text-gray-900 text-base leading-tight pr-2">{lead.company}</h4>
+                            <div className="relative">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveDropdownLeadId(activeDropdownLeadId === lead.id ? null : lead.id);
+                                }}
+                                className="flex items-center gap-1.5 text-xs font-medium border border-gray-200 rounded-md text-gray-700 py-1 pl-2.5 pr-2 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+                              >
+                                {columnsConfig.find(c => c.id === lead.stage)?.label}
+                                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                              </button>
+                              
+                              {activeDropdownLeadId === lead.id && (
+                                <div 
+                                  className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1.5 flex flex-col"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {columnsConfig.map(c => (
+                                    <button
+                                      key={c.id}
+                                      onClick={() => {
+                                        const newStage = c.id;
+                                        if (newStage === 'Lost') {
+                                          setPendingLostLead(lead);
+                                          setIsLostReasonModalOpen(true);
+                                        } else {
+                                          setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, stage: newStage } : l));
+                                          api.put(`/leads/${lead.id}`, { stage: newStage }).catch(console.error);
+                                        }
+                                        setActiveDropdownLeadId(null);
+                                      }}
+                                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                                        lead.stage === c.id 
+                                          ? 'bg-[#E8A33D]/10 text-[#E8A33D] font-bold' 
+                                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                      }`}
+                                    >
+                                      {c.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-sm text-gray-500 mb-3 flex flex-col gap-1">
+                            <span className="flex items-center gap-1.5">
+                              <span className="font-medium text-gray-700">{lead.contactPerson}</span>
+                              <span className="text-gray-300">•</span>
+                              {lead.city}
+                            </span>
+                          </div>
+
+                          {lead.products && (
+                            <div className="bg-gray-50 p-2.5 rounded-lg text-xs text-gray-700 border border-gray-100 line-clamp-2 mb-2 font-medium">
+                              {lead.products}
+                            </div>
+                          )}
+
+                          {lead.notes && (
+                            <div className="bg-[#FCF9F2] p-2.5 rounded-lg text-xs text-gray-600 border border-[#E8A33D]/10 line-clamp-2">
+                              {lead.notes}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      
-                      <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                        <div className="w-5 h-5 rounded-full bg-brand-navylight text-white flex items-center justify-center text-[10px] font-bold" title="Assignee">
-                          {lead.contactPerson?.charAt(0) || 'U'}
-                        </div>
-                        <button className="text-[10px] text-brand-accent hover:underline ml-auto">
-                          Create Quotation
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {columnLeads.length === 0 && (
-                    <div className="h-20 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center text-xs text-gray-400">
-                      Drop leads here
+                      ))}
                     </div>
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-      
-      <AddLeadModal 
-        isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)} 
-        onLeadAdded={(newLead) => setLeads(prev => [newLead, ...prev])} 
+
+      <AddLeadModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onLeadAdded={(newLead) => setLeads(prev => [newLead, ...prev])}
       />
-      <EditLeadModal
-        isOpen={isEditModalOpen}
+      <EditLeadModal 
+        isOpen={isEditModalOpen} 
         onClose={() => {
           setIsEditModalOpen(false);
           setEditingLead(null);
-        }}
+        }} 
         onLeadUpdated={handleLeadUpdated}
+        onLeadDeleted={handleLeadDeleted}
         lead={editingLead}
+      />
+      <ViewLeadModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        lead={viewingLead}
+        onEditClick={() => {
+          setEditingLead(viewingLead);
+          setIsEditModalOpen(true);
+        }}
+      />
+      <LostReasonModal
+        isOpen={isLostReasonModalOpen}
+        onClose={() => {
+          setIsLostReasonModalOpen(false);
+          setPendingLostLead(null);
+        }}
+        lead={pendingLostLead}
+        onConfirm={(leadId, stage, lostReason) => {
+          setLeads(prev => prev.map(l => l.id === leadId ? { ...l, stage, lostReason } : l));
+        }}
       />
     </div>
   );

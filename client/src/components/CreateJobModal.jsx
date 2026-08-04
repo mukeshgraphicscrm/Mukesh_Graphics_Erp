@@ -6,11 +6,12 @@ import CustomSelect from './CustomSelect';
 
 const stageOptions = [
   { value: 'Printing', label: 'Printing' },
-  { value: 'Coating', label: 'Coating' },
   { value: 'Lamination', label: 'Lamination' },
-  { value: 'Die Cutting', label: 'Die Cutting' },
-  { value: 'Folding', label: 'Folding' },
-  { value: 'Packing', label: 'Packing' },
+  { value: 'Punching', label: 'Punching' },
+  { value: 'Striping', label: 'Striping' },
+  { value: 'Pasting', label: 'Pasting' },
+  { value: 'Ready To Dispatch', label: 'Ready To Dispatch' },
+  { value: 'Dispatched', label: 'Dispatched' },
 ];
 
 const statusOptions = [
@@ -28,9 +29,8 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     stage: 'Printing',
     status: 'On Schedule',
     progress: '0',
-    machine: '',
-    operator: '',
     deadline: '',
+    notes: '',
   });
   
   const [loading, setLoading] = useState(false);
@@ -57,9 +57,8 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           stage: jobToEdit.stage || 'Printing',
           status: jobToEdit.status || 'On Schedule',
           progress: jobToEdit.progress || '0',
-          machine: jobToEdit.machine || '',
-          operator: jobToEdit.operator || '',
           deadline: jobToEdit.deadline ? new Date(jobToEdit.deadline).toISOString().split('T')[0] : '',
+          notes: jobToEdit.notes || '',
         });
       } else {
         const currentYear = new Date().getFullYear();
@@ -87,9 +86,8 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           stage: 'Printing',
           status: 'On Schedule',
           progress: '0',
-          machine: '',
-          operator: '',
           deadline: new Date().toISOString().split('T')[0],
+          notes: '',
         });
       }
     }
@@ -100,16 +98,28 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
   const handleChange = (e) => {
     const { name, value } = e.target;
     
+    // Capitalize specific text fields
+    const isTextLike = ['jobCardNo', 'productName', 'customerName', 'notes'].includes(name);
+    const updatedValue = isTextLike ? value.toUpperCase() : value;
+    
     if (name === 'stage') {
-      const stageIndex = stageOptions.findIndex(s => s.value === value) + 1;
-      const calculatedProgress = Math.round((stageIndex / stageOptions.length) * 100);
+      const stageProgressMap = {
+        'Printing': 20,
+        'Lamination': 40,
+        'Punching': 55,
+        'Striping': 70,
+        'Pasting': 90,
+        'Ready To Dispatch': 95,
+        'Dispatched': 100,
+      };
+      const calculatedProgress = stageProgressMap[updatedValue] || 0;
       setFormData((prev) => ({ 
         ...prev, 
-        [name]: value,
+        [name]: updatedValue,
         progress: calculatedProgress.toString()
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: updatedValue }));
     }
   };
 
@@ -159,7 +169,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Job Card No *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Job No *</label>
               <input
                 type="text"
                 name="jobCardNo"
@@ -208,19 +218,9 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
               />
             </div>
 
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-              <CustomSelect
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                options={statusOptions}
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Units *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Printing Copies *</label>
               <input
                 type="number"
                 name="units"
@@ -247,30 +247,6 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Machine</label>
-              <input
-                type="text"
-                name="machine"
-                value={formData.machine}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="e.g. Heidelberg CD 102"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Operator</label>
-              <input
-                type="text"
-                name="operator"
-                value={formData.operator}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="e.g. John Doe"
-              />
-            </div>
-
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Deadline *</label>
               <input
@@ -281,6 +257,18 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none"
+                placeholder="Enter any additional notes..."
+              ></textarea>
             </div>
           </div>
           

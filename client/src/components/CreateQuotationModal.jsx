@@ -1,36 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 
-export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded, onQuotationUpdated, quotations = [], quotationToEdit }) {
+export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded, onQuotationUpdated, onQuotationDeleted, quotations = [], quotationToEdit, startInEditMode }) {
   const [formData, setFormData] = useState({
     quotationNo: '',
+    companyName: '',
     customerId: '',
     productId: '',
     specs: '',
     qty: '',
-    cost: '',
     price: '',
     status: 'Draft',
   });
-  
+
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
 
+  const [isViewMode, setIsViewMode] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const formatIndianNumber = (numStr) => {
+    if (!numStr) return '';
+    const numericOnly = numStr.toString().replace(/[^0-9.]/g, '');
+    const parts = numericOnly.split('.');
+    let integerPart = parts[0];
+    const decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+
+    if (integerPart.length > 3) {
+      const lastThree = integerPart.substring(integerPart.length - 3);
+      const otherNumbers = integerPart.substring(0, integerPart.length - 3);
+      integerPart = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + lastThree;
+    }
+    return integerPart + decimalPart;
+  };
+
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && isOpen && !isDeleteModalOpen) {
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isDeleteModalOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -47,16 +67,18 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         toast.error('Failed to load customers and products.');
         setFetching(false);
       });
-      
+
+      setIsViewMode(!startInEditMode && !!quotationToEdit);
+
       if (quotationToEdit) {
         setFormData({
           quotationNo: quotationToEdit.quotationNo || '',
+          companyName: quotationToEdit.companyName || '',
           customerId: quotationToEdit.customerId || '',
           productId: quotationToEdit.productId || '',
           specs: quotationToEdit.specs || '',
-          qty: quotationToEdit.qty || '',
-          cost: quotationToEdit.cost || '',
-          price: quotationToEdit.price || '',
+          qty: formatIndianNumber(quotationToEdit.qty) || '',
+          price: formatIndianNumber(quotationToEdit.price) || '',
           status: quotationToEdit.status || 'Draft',
         });
       } else {
@@ -73,27 +95,47 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
           }
         }
         const nextQuotationNo = `QTN-${year}-${String(nextNum).padStart(3, '0')}`;
-        
+
         // Reset form on open
         setFormData({
           quotationNo: nextQuotationNo,
+          companyName: '',
           customerId: '',
           productId: '',
           specs: '',
           qty: '',
-          cost: '',
           price: '',
           status: 'Draft',
         });
       }
     }
-  }, [isOpen, quotations, quotationToEdit]);
+  }, [isOpen, quotations, quotationToEdit, startInEditMode]);
 
   if (!isOpen) return null;
 
+
+  const handleDeleteClick = () => setIsDeleteModalOpen(true);
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/quotations/${quotationToEdit.id}`);
+      if (onQuotationDeleted) onQuotationDeleted(quotationToEdit);
+      toast.success('Quotation deleted successfully!');
+      setIsDeleteModalOpen(false);
+      onClose();
+    } catch (err) {
+      console.error('Error deleting quotation:', err);
+      toast.error('Failed to delete quotation.');
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'qty' || name === 'price') {
+      setFormData((prev) => ({ ...prev, [name]: formatIndianNumber(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -103,11 +145,11 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     try {
       const payload = {
         ...formData,
-        qty: Number(formData.qty),
-        cost: Number(formData.cost),
-        price: Number(formData.price),
-        profit: Number(formData.price) - Number(formData.cost),
+        qty: Number(formData.qty.toString().replace(/,/g, '')),
+        price: Number(formData.price.toString().replace(/,/g, '')),
       };
+      setIsViewMode(!startInEditMode && !!quotationToEdit);
+
       if (quotationToEdit) {
         const res = await api.put(`/quotations/${quotationToEdit.id}`, payload);
         if (onQuotationUpdated) onQuotationUpdated(res.data);
@@ -137,22 +179,27 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
   const customerOptions = customers.map(c => ({ value: c.id, label: c.name }));
 
+  const companyOptions = Array.from(new Set(products.map(p => p.companyName).filter(Boolean))).map(name => ({
+    value: name,
+    label: name,
+  }));
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-8">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">{quotationToEdit ? 'Edit Quotation' : 'Create Quotation'}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{quotationToEdit ? (isViewMode ? 'View Quotation' : 'Edit Quotation') : 'Create Quotation'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         {fetching ? (
           <div className="p-8 text-center text-gray-500">Loading form data...</div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6">
             {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quotation No *</label>
@@ -165,17 +212,21 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                 />
               </div>
 
+
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
                 <CustomSelect
-                  name="status"
-                  value={formData.status}
+                  name="companyName"
+                  value={formData.companyName}
                   onChange={handleChange}
-                  options={statusOptions}
+                  options={companyOptions}
+                  placeholder="Select Company"
                   required
+                  disabled={isViewMode}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
                 <CustomSelect
@@ -185,6 +236,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                   options={customerOptions}
                   placeholder="Select Customer"
                   required
+                  disabled={isViewMode}
                 />
               </div>
 
@@ -196,11 +248,12 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                   required
                   value={formData.productId}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                  disabled={isViewMode}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
                   placeholder="e.g. Premium Carton"
                 />
               </div>
-              
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Specs *</label>
                 <input
@@ -209,7 +262,8 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                   required
                   value={formData.specs}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                  disabled={isViewMode}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
                   placeholder="e.g. 350 GSM Duplex · 5 Color Offset"
                 />
               </div>
@@ -217,69 +271,99 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
                 <input
-                  type="number"
+                  type="text"
                   name="qty"
                   required
                   min="1"
                   value={formData.qty}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                  disabled={isViewMode}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
                   placeholder="e.g. 50000"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit Cost (₹) *</label>
-                  <input
-                    type="number"
-                    name="cost"
-                    required
-                    step="0.01"
-                    min="0"
-                    value={formData.cost}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                    placeholder="e.g. 3.50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price (₹) *</label>
-                  <input
-                    type="number"
-                    name="price"
-                    required
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                    placeholder="e.g. 4.20"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price (₹) *</label>
+                <input
+                  type="text"
+                  name="price"
+                  required
+                  step="0.01"
+                  min="0"
+                  value={formData.price}
+                  onChange={handleChange}
+                  disabled={isViewMode}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+                  placeholder="e.g. 4.20"
+                />
               </div>
             </div>
-            
-            <div className="mt-8 flex justify-end space-x-3 border-t border-gray-100 pt-5">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : (quotationToEdit ? 'Save Changes' : 'Create Quotation')}
-              </button>
+
+            <div className={`mt-8 flex ${quotationToEdit ? 'justify-between' : 'justify-end'} items-center border-t border-gray-100 pt-5`}>
+              {quotationToEdit && (
+                <button
+                  type="button"
+                  onClick={handleDeleteClick}
+                  disabled={loading}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Quotation
+                </button>
+              )}
+              <div className="flex space-x-3">
+                {isViewMode ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setIsViewMode(false);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors"
+                    >
+                      Edit Quotation
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      disabled={loading}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50"
+                    >
+                      {loading ? 'Saving...' : (quotationToEdit ? 'Save Changes' : 'Create Quotation')}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </form>
         )}
       </div>
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Quotation"
+        message="Are you sure you want to delete this quotation? This action cannot be undone."
+      />
     </div>
   );
 }

@@ -122,7 +122,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle No.</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Transporter</label>
                 <input
                   type="text"
                   name="vehicleNo"
@@ -130,11 +130,11 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
                   value={formData.vehicleNo}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors uppercase"
-                  placeholder="e.g. GJ01AB1234"
+                  placeholder="e.g. VRL Logistics"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Driver Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Booking Location</label>
                 <input
                   type="text"
                   name="driver"
@@ -142,7 +142,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
                   value={formData.driver}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
-                  placeholder="e.g. Suresh Patel"
+                  placeholder="e.g. Mumbai Hub"
                 />
               </div>
             </div>

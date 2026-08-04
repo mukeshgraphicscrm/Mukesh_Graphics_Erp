@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, MapPin, Plus, Trash2 } from 'lucide-react';
+import { Phone, MapPin, Plus, Trash2, MoreVertical, Edit2 } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AddCustomerModal from '../components/AddCustomerModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
@@ -14,6 +14,14 @@ export default function Customers() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [startInEditMode, setStartInEditMode] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdownId(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     api.get('/customers')
@@ -98,14 +106,45 @@ export default function Customers() {
       <span className="font-bold text-gray-900 text-[13px]">₹{row.totalBusiness?.toLocaleString('en-IN') || 0}</span>
     )},
     { header: 'Actions', accessor: row => row.id, render: row => (
-      <div className="flex items-center space-x-2">
+      <div className="relative">
         <button 
-          onClick={(e) => confirmDeleteCustomer(row, e)}
-          className="text-gray-400 hover:text-red-500 p-1.5 rounded-md hover:bg-red-50 transition-colors"
-          title="Delete Customer"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenDropdownId(openDropdownId === row.id ? null : row.id);
+          }}
+          className="text-gray-400 hover:text-gray-600 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+          title="More Actions"
         >
-          <Trash2 className="w-4 h-4" />
+          <MoreVertical className="w-4 h-4" />
         </button>
+        {openDropdownId === row.id && (
+          <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50">
+            <div className="py-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenDropdownId(null);
+                  setStartInEditMode(true);
+                  setCustomerToEdit(row);
+                  setIsModalOpen(true);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+              >
+                <Edit2 className="w-4 h-4 mr-2" /> Edit
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenDropdownId(null);
+                  confirmDeleteCustomer(row, e);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Delete
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     )},
   ];
@@ -129,6 +168,7 @@ export default function Customers() {
         actionButton={
           <button 
             onClick={() => {
+              setStartInEditMode(false);
               setCustomerToEdit(null);
               setIsModalOpen(true);
             }}
@@ -141,6 +181,7 @@ export default function Customers() {
         columns={columns}
         data={data}
         onRowClick={(row) => {
+          setStartInEditMode(false);
           setCustomerToEdit(row);
           setIsModalOpen(true);
         }}
@@ -154,6 +195,7 @@ export default function Customers() {
         onCustomerAdded={handleCustomerAdded}
         onCustomerUpdated={handleCustomerUpdated}
         customerToEdit={customerToEdit}
+        startInEditMode={startInEditMode}
       />
       <DeleteConfirmModal
         isOpen={deleteModalOpen}
@@ -164,7 +206,11 @@ export default function Customers() {
         onConfirm={handleDeleteConfirm}
         isDeleting={isDeleting}
         title="Delete Customer"
-        message={`Are you sure you want to delete ${customerToDelete?.name}? This action cannot be undone.`}
+        message={
+          <>
+            Are you sure you want to delete <span className="font-bold">{customerToDelete?.name}</span>? This action cannot be undone.
+          </>
+        }
       />
     </div>
   );

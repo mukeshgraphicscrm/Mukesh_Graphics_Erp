@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
@@ -12,6 +13,20 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState(null);
+  const [startInEditMode, setStartInEditMode] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [initialData, setInitialData] = useState(null);
+
+  useEffect(() => {
+    if (location.state?.convertQuote) {
+      setInitialData(location.state.convertQuote);
+      setIsModalOpen(true);
+      // Clean up state
+      navigate('/orders', { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
 
   useEffect(() => {
     // In a real app, you might fetch populated data from the backend. 
@@ -24,11 +39,11 @@ export default function Orders() {
       const custMap = {};
       custRes.data.forEach(c => custMap[c.id] = c);
       setCustomers(custMap);
-      
+
       const prodMap = {};
       prodRes.data.forEach(p => prodMap[p.id] = p);
       setProducts(prodMap);
-      
+
       setData(ordersRes.data);
       setLoading(false);
     }).catch(err => {
@@ -38,7 +53,7 @@ export default function Orders() {
   }, []);
 
   const columns = [
-    { header: 'Order #', accessor: row => row.orderNo, render: row => <span className="font-medium text-brand-accent">{row.orderNo}</span> },
+    { header: 'Order No.', accessor: row => row.orderNo, render: row => <span className="font-medium text-brand-accent">{row.orderNo}</span> },
     { header: 'Customer', accessor: row => customers[row.customerId]?.name || row.customerId },
     { header: 'Product', accessor: row => products[row.productId]?.name || row.productId },
     { header: 'Quantity', accessor: row => row.quantity.toLocaleString('en-IN') },
@@ -57,6 +72,10 @@ export default function Orders() {
     setData((prev) => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
   };
 
+  const handleOrderDeleted = (orderId) => {
+    setData((prev) => prev.filter(o => o.id !== orderId));
+  };
+
   return (
     <div className="h-[calc(100vh-8rem)]">
       <DataTable
@@ -65,6 +84,7 @@ export default function Orders() {
         actionButton={
           <button 
             onClick={() => {
+              setStartInEditMode(true);
               setOrderToEdit(null);
               setIsModalOpen(true);
             }}
@@ -77,20 +97,25 @@ export default function Orders() {
         columns={columns}
         data={data}
         onRowClick={(row) => {
+          setStartInEditMode(false);
           setOrderToEdit(row);
           setIsModalOpen(true);
         }}
       />
-      <CreateOrderModal 
-        isOpen={isModalOpen} 
+      <CreateOrderModal
+        initialData={initialData}
+        isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
+          setInitialData(null);
           setOrderToEdit(null);
-        }} 
-        onOrderAdded={handleOrderAdded} 
+        }}
+        onOrderAdded={handleOrderAdded}
         onOrderUpdated={handleOrderUpdated}
+        onOrderDeleted={handleOrderDeleted}
         orders={data} 
         orderToEdit={orderToEdit}
+        startInEditMode={startInEditMode}
       />
     </div>
   );
