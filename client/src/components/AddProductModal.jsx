@@ -20,6 +20,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -40,16 +41,20 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
 
   useEffect(() => {
     if (isOpen) {
-      fetchCategories();
+      fetchData();
     }
   }, [isOpen]);
 
-  const fetchCategories = async () => {
+  const fetchData = async () => {
     try {
-      const res = await api.get('/categories');
-      setCategories(res.data);
+      const [catRes, custRes] = await Promise.all([
+        api.get('/categories'),
+        api.get('/customers')
+      ]);
+      setCategories(catRes.data);
+      setCustomers(custRes.data);
     } catch (err) {
-      console.error('Error fetching categories:', err);
+      console.error('Error fetching data:', err);
     }
   };
 
@@ -97,7 +102,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'category') {
+    if (name === 'category' || name === 'companyName') {
       setFormData((prev) => ({ ...prev, [name]: value }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value }));
@@ -183,6 +188,18 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
     label: cat.name,
   }));
 
+  const customerOptions = customers.map(cust => ({
+    value: cust.name,
+    label: cust.name + (cust.contactPerson ? ` - ${cust.contactPerson}` : ''),
+  }));
+
+  if (formData.companyName && !customerOptions.find(opt => opt.value === formData.companyName)) {
+    customerOptions.push({
+      value: formData.companyName,
+      label: formData.companyName,
+    });
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-8">
@@ -199,15 +216,13 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-              <input
-                type="text"
+              <CustomSelect
                 name="companyName"
-                autoFocus
-                disabled={isViewMode}
                 value={formData.companyName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-                placeholder="e.g. Acme Corp"
+                options={customerOptions}
+                disabled={isViewMode}
+                placeholder="Select Customer..."
               />
             </div>
 

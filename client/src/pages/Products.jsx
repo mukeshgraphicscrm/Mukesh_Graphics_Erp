@@ -5,6 +5,8 @@ import AddCategoryModal from '../components/AddCategoryModal';
 import CustomSelect from '../components/CustomSelect';
 import api from '../lib/api';
 import { cn } from '../lib/utils';
+import { jsPDF } from 'jspdf';
+import toast from 'react-hot-toast';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -16,6 +18,175 @@ export default function Products() {
   const [startInEditMode, setStartInEditMode] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (filteredProducts.length === 0) {
+      toast.error('No products to export');
+      return;
+    }
+    
+    setIsExporting(true);
+    const toastId = toast.loading('Generating PDF Catalog...');
+    
+    try {
+      const doc = new jsPDF({ format: 'a4' });
+      const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+      const margin = 15;
+      const cardWidth = (pageWidth - margin * 2 - 10) / 2; // 2 cols, 10mm gap
+      const cardHeight = 100;
+      
+      let yPos = 40;
+      let col = 0;
+      
+      const loadImage = (url) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'Anonymous';
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.onerror = () => resolve(null);
+          img.src = url;
+        });
+      };
+      
+      const logoBase64 = await loadImage('/logo.png');
+      
+      const drawHeader = () => {
+        if (logoBase64) {
+          doc.addImage(logoBase64, 'PNG', margin, 10, 20, 20);
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(27, 47, 99); 
+        doc.text("Mukesh Graphics", margin + (logoBase64 ? 25 : 0), 20);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Product Catalog", margin + (logoBase64 ? 25 : 0), 26);
+        
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, 35, pageWidth - margin, 35);
+      };
+      
+      drawHeader();
+      
+      for (let i = 0; i < filteredProducts.length; i++) {
+        const p = filteredProducts[i];
+        
+        if (yPos + cardHeight > pageHeight - margin - 10) {
+          doc.addPage();
+          drawHeader();
+          yPos = 40;
+          col = 0;
+        }
+        
+        const xPos = margin + col * (cardWidth + 10);
+        
+        // Draw Card Border
+        doc.setDrawColor(220, 220, 220);
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(xPos, yPos, cardWidth, cardHeight, 3, 3, "FD");
+        
+        // Draw Image area background
+        doc.setFillColor(27, 47, 99); 
+        doc.roundedRect(xPos, yPos, cardWidth, 40, 3, 3, "F");
+        doc.rect(xPos, yPos + 20, cardWidth, 20, "F"); // cover bottom corners
+        
+        if (p.image) {
+          const imgUrl = p.image.startsWith('http') ? p.image : `http://localhost:5000${p.image}`;
+          const imgBase64 = await loadImage(imgUrl);
+          if (imgBase64) {
+            doc.addImage(imgBase64, 'PNG', xPos + (cardWidth - 36)/2, yPos + 2, 36, 36);
+          }
+        }
+        
+        // Product Name
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(30, 30, 30);
+        const splitTitle = doc.splitTextToSize(p.name || '-', cardWidth - 10);
+        doc.text(splitTitle[0], xPos + 5, yPos + 48); 
+        
+        // Category
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text(p.category || 'Uncategorized', xPos + 5, yPos + 54);
+        
+        // Details Grid
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text("Material", xPos + 5, yPos + 62);
+        doc.text("GSM", xPos + cardWidth/2 + 2, yPos + 62);
+        
+        doc.setTextColor(50, 50, 50);
+        doc.setFont("helvetica", "bold");
+        const mat = doc.splitTextToSize(p.material || '-', cardWidth/2 - 5)[0];
+        const gsm = doc.splitTextToSize(p.gsm?.toString() || '-', cardWidth/2 - 5)[0];
+        doc.text(mat, xPos + 5, yPos + 66);
+        doc.text(gsm, xPos + cardWidth/2 + 2, yPos + 66);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(150, 150, 150);
+        doc.text("Printing", xPos + 5, yPos + 74);
+        doc.text("Dimensions", xPos + cardWidth/2 + 2, yPos + 74);
+        
+        doc.setTextColor(50, 50, 50);
+        doc.setFont("helvetica", "bold");
+        const prt = doc.splitTextToSize(p.printing || '-', cardWidth/2 - 5)[0];
+        const dim = doc.splitTextToSize(p.dimensions || '-', cardWidth/2 - 5)[0];
+        doc.text(prt, xPos + 5, yPos + 78);
+        doc.text(dim, xPos + cardWidth/2 + 2, yPos + 78);
+        
+        // Line separator
+        doc.setDrawColor(240, 240, 240);
+        doc.line(xPos, yPos + 86, xPos + cardWidth, yPos + 86);
+        
+        // Unit Price
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.text("Unit price", xPos + 5, yPos + 94);
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(27, 47, 99);
+        doc.text(`Rs ${Number(p.unitPrice || 0).toLocaleString('en-IN')}`, xPos + cardWidth - 5, yPos + 94, { align: 'right' });
+        
+        col++;
+        if (col === 2) {
+          col = 0;
+          yPos += cardHeight + 10;
+        }
+      }
+      
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for(let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+      }
+
+      doc.save('Product_Catalog.pdf');
+      toast.success('Catalog exported successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Export Error:', error);
+      toast.error('Failed to export catalog.', { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     api.get('/products')
@@ -107,9 +278,13 @@ export default function Products() {
                 triggerClassName="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm cursor-pointer flex justify-between items-center"
               />
             </div>
-            <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+            <button 
+              onClick={handleExport}
+              disabled={isExporting}
+              className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
+            >
               <Download className="w-4 h-4" />
-              <span>Export</span>
+              <span>{isExporting ? 'Exporting...' : 'Export'}</span>
             </button>
           </div>
         </div>
