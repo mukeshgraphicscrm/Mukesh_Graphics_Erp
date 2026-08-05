@@ -8,6 +8,7 @@ import StatusBadge from '../components/StatusBadge';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import CreateQuotationModal from '../components/CreateQuotationModal';
 import api from '../lib/api';
+import { generateQuotationPDF } from '../lib/pdfGenerator';
 
 
 export default function Quotations() {
@@ -54,22 +55,81 @@ export default function Quotations() {
     },
     {
       header: 'PRODUCT',
-      accessor: row => `${products[row.productId]?.name || row.productId} - ${row.specs || ''}`,
-      render: row => (
-        <div className="max-w-[250px]">
-          <div className="font-bold text-gray-900 text-[13px] truncate" title={products[row.productId]?.name || row.productId}>
-            {products[row.productId]?.name || row.productId}
+      accessor: row => {
+        const items = row.items && row.items.length > 0 ? row.items : [{ productId: row.productId, specs: row.specs }];
+        return items.map(i => products[i.productId]?.name || i.productId).join(', ');
+      },
+      render: row => {
+        const items = row.items && row.items.length > 0 ? row.items : [{ productId: row.productId, specs: row.specs, qty: row.qty }];
+        
+        return (
+          <div className="min-w-[200px] max-w-[350px] flex flex-col gap-1 py-1">
+            {items.map((item, idx) => {
+              const productName = products[item.productId]?.name || item.productId;
+              return (
+                <div key={idx} className="flex items-start text-[13px]">
+                  <span className="font-medium text-gray-900 pr-4 truncate" title={productName}>{productName}</span>
+                </div>
+              );
+            })}
           </div>
-          <div className="text-[12px] text-gray-500 truncate" title={row.specs}>{row.specs}</div>
-        </div>
-      )
+        );
+      }
     },
 
 
     {
-      header: 'TOTAL AMOUNT',
-      accessor: row => (row.qty || 0) * (row.price || 0),
-      render: row => <span className="font-bold text-gray-900 text-[13px]">₹{((row.qty || 0) * (row.price || 0)).toLocaleString('en-IN')}</span>
+      header: 'QUANTITY',
+      accessor: row => {
+        const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty }];
+        return items.map(item => Number(item.qty) || 0).join(',');
+      },
+      render: row => {
+        const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty }];
+        return (
+          <div className="flex flex-col gap-1 py-1 min-w-[60px]">
+            {items.map((item, idx) => (
+              <div key={idx} className="text-[13px] text-gray-600 tabular-nums">
+                {Number(item.qty || 0).toLocaleString('en-IN')}
+              </div>
+            ))}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'AMOUNT',
+      accessor: row => {
+        const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty, price: row.price }];
+        return items.map(item => (Number(item.qty) || 0) * (Number(item.price) || 0)).join(',');
+      },
+      render: row => {
+        const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty, price: row.price }];
+        return (
+          <div className="flex flex-col gap-1 py-1 min-w-[80px]">
+            {items.map((item, idx) => {
+              const amount = (Number(item.qty) || 0) * (Number(item.price) || 0);
+              return (
+                <div key={idx} className="text-[13px] text-gray-900 tabular-nums">
+                  ₹{amount.toLocaleString('en-IN')}
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'GRAND TOTAL',
+      accessor: row => {
+        const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty, price: row.price }];
+        return items.reduce((sum, item) => sum + (Number(item.qty) || 0) * (Number(item.price) || 0), 0);
+      },
+      render: row => {
+        const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty, price: row.price }];
+        const total = items.reduce((sum, item) => sum + (Number(item.qty) || 0) * (Number(item.price) || 0), 0);
+        return <span className="font-bold text-[#1e3a8a] text-[13px]">₹{total.toLocaleString('en-IN')}</span>;
+      }
     },
     {
       header: 'DOCUMENT',
@@ -123,25 +183,15 @@ export default function Quotations() {
     navigate('/orders', { state: { convertQuote: quote } });
   };
 
-  const generatePDF = (quote) => {
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text('QUOTATION', 14, 22);
-    
-    doc.setFontSize(12);
-    doc.text(`Quotation No: ${quote.quotationNo}`, 14, 40);
-    const custName = customers[quote.customerId]?.name || quote.customerId;
-    doc.text(`Customer: ${custName}`, 14, 48);
-    const prodName = products[quote.productId]?.name || quote.productId;
-    doc.text(`Product: ${prodName}`, 14, 56);
-    doc.text(`Specs: ${quote.specs || ''}`, 14, 64);
-    
-    doc.text(`Quantity: ${quote.qty?.toLocaleString('en-IN') || 0}`, 14, 80);
-    doc.text(`Unit Price: Rs. ${quote.price?.toLocaleString('en-IN') || 0}`, 14, 88);
-    doc.text(`Total Amount: Rs. ${((quote.qty || 0) * (quote.price || 0)).toLocaleString('en-IN')}`, 14, 96);
-
-    doc.save(`${quote.quotationNo}.pdf`);
-    toast.success('Quotation document generated!');
+  const generatePDF = async (quote) => {
+    const toastId = toast.loading('Generating PDF...');
+    try {
+      await generateQuotationPDF(quote, customers, products);
+      toast.success('Quotation document generated!', { id: toastId });
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      toast.error('Failed to generate PDF.', { id: toastId });
+    }
   };
 
   const handleQuotationDeleted = (deletedQuote) => {

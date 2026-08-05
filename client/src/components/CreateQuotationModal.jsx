@@ -4,6 +4,7 @@ import ConfirmDeleteModal from './ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
+import { generateQuotationPDF } from '../lib/pdfGenerator';
 
 export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded, onQuotationUpdated, onQuotationDeleted, quotations = [], quotationToEdit, startInEditMode }) {
   const [formData, setFormData] = useState({
@@ -201,6 +202,19 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         const res = await api.post('/quotations', payload);
         if (onQuotationAdded) onQuotationAdded(res.data);
         toast.success('Quotation created successfully!');
+        
+        // Automatically generate PDF for the new quotation
+        const custMap = {};
+        customers.forEach(c => custMap[c.id] = c);
+        const prodMap = {};
+        products.forEach(p => prodMap[p.id] = p);
+        
+        try {
+          await generateQuotationPDF(res.data, custMap, prodMap);
+        } catch (pdfErr) {
+          console.error('Error generating PDF:', pdfErr);
+          toast.error('Quotation created, but failed to generate PDF.');
+        }
       }
       onClose();
     } catch (err) {
