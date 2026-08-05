@@ -12,6 +12,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     companyName: '',
     customerId: '',
     productId: '',
+    leadId: '',
     specs: '',
     qty: '',
     price: '',
@@ -20,6 +21,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
@@ -58,14 +60,16 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       setFetching(true);
       Promise.all([
         api.get('/customers'),
-        api.get('/products')
-      ]).then(([custRes, prodRes]) => {
+        api.get('/products'),
+        api.get('/leads')
+      ]).then(([custRes, prodRes, leadsRes]) => {
         setCustomers(custRes.data);
         setProducts(prodRes.data);
+        setLeads(leadsRes.data);
         setFetching(false);
       }).catch(err => {
         console.error('Error fetching data:', err);
-        toast.error('Failed to load customers and products.');
+        toast.error('Failed to load customers, products, and leads.');
         setFetching(false);
       });
 
@@ -76,6 +80,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
           quotationNo: quotationToEdit.quotationNo || '',
           companyName: quotationToEdit.companyName || '',
           customerId: quotationToEdit.customerId || '',
+          leadId: quotationToEdit.leadId || '',
           productId: quotationToEdit.productId ? (Array.isArray(quotationToEdit.productId) ? quotationToEdit.productId : [quotationToEdit.productId]) : [],
           items: quotationToEdit.items || [
             {
@@ -107,6 +112,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
           quotationNo: nextQuotationNo,
           companyName: '',
           customerId: '',
+          leadId: '',
           productId: [],
           items: [],
           status: 'Draft',
@@ -152,7 +158,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       return;
     }
 
-    const upperValue = typeof value === 'string' ? value.toUpperCase() : value;
+    const upperValue = typeof value === 'string' && !['customerId', 'leadId'].includes(name) ? value.toUpperCase() : value;
     setFormData((prev) => {
       const newData = { ...prev, [name]: upperValue };
       
@@ -244,6 +250,11 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     label: name,
   }));
 
+  const leadOptions = leads.map(l => ({
+    value: l.id,
+    label: `${l.contactPerson || 'Unknown Contact'} ${l.company ? `(${l.company})` : ''}`.trim()
+  }));
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[90vh]">
@@ -271,8 +282,6 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
                 />
               </div>
-
-
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
@@ -311,6 +320,18 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                   required
                   disabled={isViewMode || !formData.companyName}
                   isMulti={true}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead (Optional)</label>
+                <CustomSelect
+                  name="leadId"
+                  value={formData.leadId}
+                  onChange={handleChange}
+                  options={leadOptions}
+                  placeholder="Select a Lead to Link"
+                  disabled={isViewMode}
                 />
               </div>
             </div>

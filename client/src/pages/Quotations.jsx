@@ -16,6 +16,7 @@ export default function Quotations() {
   const [data, setData] = useState([]);
   const [customers, setCustomers] = useState({});
   const [products, setProducts] = useState({});
+  const [leads, setLeads] = useState({});
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quotationToEdit, setQuotationToEdit] = useState(null);
@@ -32,8 +33,9 @@ export default function Quotations() {
     Promise.all([
       api.get('/quotations'),
       api.get('/customers'),
-      api.get('/products')
-    ]).then(([qtnsRes, custRes, prodRes]) => {
+      api.get('/products'),
+      api.get('/leads')
+    ]).then(([qtnsRes, custRes, prodRes, leadsRes]) => {
       const custMap = {};
       custRes.data.forEach(c => custMap[c.id] = c);
       setCustomers(custMap);
@@ -41,6 +43,10 @@ export default function Quotations() {
       const prodMap = {};
       prodRes.data.forEach(p => prodMap[p.id] = p);
       setProducts(prodMap);
+
+      const leadsMap = {};
+      leadsRes.data.forEach(l => leadsMap[l.id] = l);
+      setLeads(leadsMap);
 
       setData(qtnsRes.data);
       setLoading(false);
@@ -51,11 +57,21 @@ export default function Quotations() {
   }, []);
 
   const columns = [
-    { header: 'QUOTATION No.', accessor: row => row.quotationNo, render: row => <span className="font-bold text-[#1e3a8a] text-[13px]">{row.quotationNo}</span> },
+    { 
+      header: 'QUOTATION No.', 
+      accessor: row => row.quotationNo, 
+      render: row => {
+        const isLost = row.leadId && leads[row.leadId]?.stage === 'Lost';
+        return <span className={`font-bold text-[13px] ${isLost ? 'text-red-600' : 'text-[#1e3a8a]'}`}>{row.quotationNo}</span>;
+      } 
+    },
     {
       header: 'CUSTOMER',
       accessor: row => customers[row.customerId]?.name || row.customerId,
-      render: row => <span className="font-medium text-gray-900 text-[13px]">{customers[row.customerId]?.name || row.customerId}</span>
+      render: row => {
+        const isLost = row.leadId && leads[row.leadId]?.stage === 'Lost';
+        return <span className={`font-medium text-[13px] ${isLost ? 'text-red-600' : 'text-gray-900'}`}>{customers[row.customerId]?.name || row.customerId}</span>;
+      }
     },
     {
       header: 'PRODUCT',
@@ -65,6 +81,7 @@ export default function Quotations() {
       },
       render: row => {
         const items = row.items && row.items.length > 0 ? row.items : [{ productId: row.productId, specs: row.specs, qty: row.qty }];
+        const isLost = row.leadId && leads[row.leadId]?.stage === 'Lost';
         
         return (
           <div className="min-w-[200px] max-w-[350px] flex flex-col gap-1 py-1">
@@ -72,7 +89,7 @@ export default function Quotations() {
               const productName = products[item.productId]?.name || item.productId;
               return (
                 <div key={idx} className="flex items-start text-[13px]">
-                  <span className="font-medium text-gray-900 pr-4 truncate" title={productName}>{productName}</span>
+                  <span className={`font-medium pr-4 truncate ${isLost ? 'text-red-600' : 'text-gray-900'}`} title={productName}>{productName}</span>
                 </div>
               );
             })}
@@ -80,8 +97,6 @@ export default function Quotations() {
         );
       }
     },
-
-
     {
       header: 'QUANTITY',
       accessor: row => {
@@ -90,10 +105,11 @@ export default function Quotations() {
       },
       render: row => {
         const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty }];
+        const isLost = row.leadId && leads[row.leadId]?.stage === 'Lost';
         return (
           <div className="flex flex-col gap-1 py-1 min-w-[60px]">
             {items.map((item, idx) => (
-              <div key={idx} className="text-[13px] text-gray-600 tabular-nums">
+              <div key={idx} className={`text-[13px] tabular-nums ${isLost ? 'text-red-600' : 'text-gray-600'}`}>
                 {Number(item.qty || 0).toLocaleString('en-IN')}
               </div>
             ))}
@@ -109,12 +125,13 @@ export default function Quotations() {
       },
       render: row => {
         const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty, price: row.price }];
+        const isLost = row.leadId && leads[row.leadId]?.stage === 'Lost';
         return (
           <div className="flex flex-col gap-1 py-1 min-w-[80px]">
             {items.map((item, idx) => {
               const amount = (Number(item.qty) || 0) * (Number(item.price) || 0);
               return (
-                <div key={idx} className="text-[13px] text-gray-900 tabular-nums">
+                <div key={idx} className={`text-[13px] tabular-nums ${isLost ? 'text-red-600' : 'text-gray-900'}`}>
                   ₹{amount.toLocaleString('en-IN')}
                 </div>
               );
@@ -132,7 +149,8 @@ export default function Quotations() {
       render: row => {
         const items = row.items && row.items.length > 0 ? row.items : [{ qty: row.qty, price: row.price }];
         const total = items.reduce((sum, item) => sum + (Number(item.qty) || 0) * (Number(item.price) || 0), 0);
-        return <span className="font-bold text-[#1e3a8a] text-[13px]">₹{total.toLocaleString('en-IN')}</span>;
+        const isLost = row.leadId && leads[row.leadId]?.stage === 'Lost';
+        return <span className={`font-bold text-[13px] ${isLost ? 'text-red-600' : 'text-[#1e3a8a]'}`}>₹{total.toLocaleString('en-IN')}</span>;
       }
     },
     {
