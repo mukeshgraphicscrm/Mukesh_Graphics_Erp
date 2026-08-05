@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Download, Filter, RotateCcw } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 export default function DataTable({
   title,
@@ -49,28 +49,91 @@ export default function DataTable({
     const headers = columns.map(c => c.header);
     const dataArray = [headers];
 
+    const merges = [];
+    let currentRowIndex = 1; // Row 0 is the header
+
     filteredData.forEach(row => {
-      const rowData = columns.map(c => {
-        let val = c.accessor(row);
-        if (val === null || val === undefined) val = '';
-        return String(val); // Force all to string to prevent Excel scientific notation on mobile numbers
+      // Get all values, handling arrays (from exportAccessor)
+      const rowValues = columns.map(c => {
+        const val = c.exportAccessor ? c.exportAccessor(row) : c.accessor(row);
+        return val;
       });
-      dataArray.push(rowData);
+
+      // Find max items in this row to see if we need multiple excel rows
+      let maxItems = 1;
+      rowValues.forEach(val => {
+        if (Array.isArray(val) && val.length > maxItems) {
+          maxItems = val.length;
+        }
+      });
+
+      for (let i = 0; i < maxItems; i++) {
+        const excelRow = rowValues.map(val => {
+          if (Array.isArray(val)) {
+            return String(val[i] !== undefined && val[i] !== null ? val[i] : '');
+          } else {
+            // Only put non-array values in the first row of this block
+            return i === 0 ? String(val !== null && val !== undefined ? val : '') : '';
+          }
+        });
+        dataArray.push(excelRow);
+      }
+
+      // Add merges for non-array columns if there are multiple items
+      if (maxItems > 1) {
+        rowValues.forEach((val, colIdx) => {
+          if (!Array.isArray(val)) {
+            merges.push({
+              s: { r: currentRowIndex, c: colIdx },
+              e: { r: currentRowIndex + maxItems - 1, c: colIdx }
+            });
+          }
+        });
+      }
+
+      currentRowIndex += maxItems;
     });
 
     // 2. Create worksheet
     const ws = XLSX.utils.aoa_to_sheet(dataArray);
+    if (merges.length > 0) {
+      ws['!merges'] = merges;
+    }
+
+    // Apply vertical centering and basic styling
+    for (const cellAddress in ws) {
+      if (cellAddress.startsWith('!')) continue;
+
+      if (!ws[cellAddress].s) ws[cellAddress].s = {};
+
+      ws[cellAddress].s.alignment = {
+        vertical: 'center',
+        wrapText: true
+      };
+
+      ws[cellAddress].s.font = {
+        name: 'Times New Roman',
+        sz: 14
+      };
+
+      // Header row styling
+      if (cellAddress.replace(/\D/g, '') === '1') {
+        ws[cellAddress].s.font.bold = true;
+      }
+    }
 
     // 3. Automatically calculate and set column widths
     const colWidths = headers.map((header, colIndex) => {
       let maxLength = header.length;
       dataArray.forEach(row => {
-        const cellValue = row[colIndex] || '';
+        const cellValue = String(row[colIndex] || '');
         if (cellValue.length > maxLength) {
           maxLength = cellValue.length;
         }
       });
-      return { wch: maxLength + 2 }; // Add padding for clean UI
+      // Calculate width with a balanced multiplier for size 14 font.
+      // This prevents wrapping but avoids excessive empty space.
+      return { wch: Math.min(Math.round(maxLength * 1.4) + 4, 100) };
     });
     ws['!cols'] = colWidths;
 

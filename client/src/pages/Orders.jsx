@@ -63,6 +63,12 @@ export default function Orders() {
         }
         return products[row.productId]?.name || row.productId;
       },
+      exportAccessor: row => {
+        if (Array.isArray(row.productId)) {
+          return row.productId.map(id => products[id]?.name || id);
+        }
+        return products[row.productId]?.name || row.productId;
+      },
       render: row => {
         if (Array.isArray(row.productId)) {
           return (
@@ -79,6 +85,12 @@ export default function Orders() {
     { 
       header: 'Quantity', 
       accessor: row => row.quantity.toLocaleString('en-IN'),
+      exportAccessor: row => {
+        if (Array.isArray(row.productId) && row.quantities) {
+          return row.productId.map(id => (row.quantities[id] || '0').toString());
+        }
+        return row.quantity.toLocaleString('en-IN');
+      },
       render: row => {
         if (Array.isArray(row.productId) && row.quantities) {
           return (
@@ -95,6 +107,12 @@ export default function Orders() {
     { 
       header: 'Amount', 
       accessor: row => `₹${row.amount.toLocaleString('en-IN')}`,
+      exportAccessor: row => {
+        if (Array.isArray(row.productId) && row.amounts) {
+          return row.productId.map(id => `₹${row.amounts[id] || '0'}`);
+        }
+        return `₹${row.amount.toLocaleString('en-IN')}`;
+      },
       render: row => {
         if (Array.isArray(row.productId) && row.amounts) {
           return (
