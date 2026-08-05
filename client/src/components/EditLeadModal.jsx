@@ -129,7 +129,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="company"
@@ -142,7 +142,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="contactPerson"
@@ -157,7 +157,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="city"
@@ -169,7 +169,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="state"
@@ -183,7 +183,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stage <span className="text-red-500">*</span></label>
               <CustomSelect
                 name="stage"
                 value={formData.stage}

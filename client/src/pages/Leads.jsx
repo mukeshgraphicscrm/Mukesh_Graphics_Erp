@@ -23,6 +23,7 @@ export default function Leads() {
   const [editingLead, setEditingLead] = useState(null);
   const [viewingLead, setViewingLead] = useState(null);
   const [pendingLostLead, setPendingLostLead] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     api.get('/leads')
@@ -85,12 +86,11 @@ export default function Leads() {
             <input
               type="text"
               placeholder="Search leads..."
-              className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-accent"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-96 pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all"
             />
           </div>
-          <button className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors flex items-center">
-            <Filter className="w-4 h-4 mr-2" /> Filter
-          </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="btn-add"
@@ -103,13 +103,25 @@ export default function Leads() {
       {/* Vertical Accordion List */}
       <div className="flex-1 overflow-y-auto pb-4 px-1 space-y-4">
         {columnsConfig.map(col => {
-          const columnLeads = leads.filter(l => l.stage === col.id);
+          const filteredLeads = leads.filter(lead => {
+            if (!searchTerm) return true;
+            const search = searchTerm.toLowerCase();
+            return (
+              lead.company?.toLowerCase().includes(search) ||
+              lead.contactPerson?.toLowerCase().includes(search) ||
+              lead.city?.toLowerCase().includes(search) ||
+              lead.state?.toLowerCase().includes(search) ||
+              lead.products?.toLowerCase().includes(search) ||
+              lead.notes?.toLowerCase().includes(search)
+            );
+          });
+          const columnLeads = filteredLeads.filter(l => l.stage === col.id);
           const isExpanded = expandedStages[col.id];
 
           return (
             <div key={col.id} className="bg-white rounded-lg border border-gray-200 shadow-sm relative">
               {/* Stage Header */}
-              <div 
+              <div
                 className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors rounded-t-lg"
                 onClick={() => toggleStage(col.id)}
               >
@@ -151,9 +163,9 @@ export default function Leads() {
                                 {columnsConfig.find(c => c.id === lead.stage)?.label}
                                 <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
                               </button>
-                              
+
                               {activeDropdownLeadId === lead.id && (
-                                <div 
+                                <div
                                   className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-100 rounded-lg shadow-lg z-50 py-1.5 flex flex-col"
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -171,11 +183,10 @@ export default function Leads() {
                                         }
                                         setActiveDropdownLeadId(null);
                                       }}
-                                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                                        lead.stage === c.id 
-                                          ? 'bg-[#E8A33D]/10 text-[#E8A33D] font-bold' 
+                                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${lead.stage === c.id
+                                          ? 'bg-[#E8A33D]/10 text-[#E8A33D] font-bold'
                                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                      }`}
+                                        }`}
                                     >
                                       {c.label}
                                     </button>
@@ -219,12 +230,12 @@ export default function Leads() {
         onClose={() => setIsAddModalOpen(false)}
         onLeadAdded={(newLead) => setLeads(prev => [newLead, ...prev])}
       />
-      <EditLeadModal 
-        isOpen={isEditModalOpen} 
+      <EditLeadModal
+        isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
           setEditingLead(null);
-        }} 
+        }}
         onLeadUpdated={handleLeadUpdated}
         onLeadDeleted={handleLeadDeleted}
         lead={editingLead}

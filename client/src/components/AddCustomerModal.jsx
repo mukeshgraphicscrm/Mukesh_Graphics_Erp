@@ -106,7 +106,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company / Customer Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company / Customer Name <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 name="name"
