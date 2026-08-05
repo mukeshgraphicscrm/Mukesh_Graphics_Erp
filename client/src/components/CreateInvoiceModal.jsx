@@ -103,7 +103,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers, onInvoi
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">{invoiceToEdit ? 'Edit Invoice' : 'Create Invoice'}</h2>

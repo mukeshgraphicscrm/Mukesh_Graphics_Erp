@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
-import { MapPin, FileText, Truck, Plus } from 'lucide-react';
+import { MapPin, FileText, Truck, Plus, Trash2 } from 'lucide-react';
 import ScheduleDispatchModal from '../components/ScheduleDispatchModal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
 
 export default function Dispatch() {
   const [data, setData] = useState([]);
@@ -11,6 +13,22 @@ export default function Dispatch() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dispatchToEdit, setDispatchToEdit] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [dispatchToDelete, setDispatchToDelete] = useState(null);
+
+  const handleDeleteDispatch = async () => {
+    try {
+      await api.delete(`/dispatches/${dispatchToDelete.id}`);
+      setData(prev => prev.filter(d => d.id !== dispatchToDelete.id));
+      toast.success('Dispatch deleted successfully!');
+    } catch (err) {
+      console.error('Error deleting dispatch:', err);
+      toast.error('Failed to delete dispatch.');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setDispatchToDelete(null);
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -45,13 +63,24 @@ export default function Dispatch() {
     {
       header: 'ACTIONS',
       accessor: () => null,
-      render: () => (
+      render: (row) => (
         <div className="flex space-x-3">
-          <button className="text-gray-400 hover:text-[#1b2f63] transition-colors" title="View Challan">
+          <button className="text-gray-400 hover:text-[#1b2f63] transition-colors" title="View Challan" onClick={(e) => e.stopPropagation()}>
             <FileText className="w-4 h-4" />
           </button>
-          <button className="text-[#1b2f63] hover:text-[#112046] transition-colors bg-blue-50 p-1 rounded" title="View Map Location">
+          <button className="text-[#1b2f63] hover:text-[#112046] transition-colors bg-blue-50 p-1 rounded" title="View Map Location" onClick={(e) => e.stopPropagation()}>
             <MapPin className="w-4 h-4" />
+          </button>
+          <button 
+            className="text-red-400 hover:text-red-600 transition-colors bg-red-50 p-1 rounded" 
+            title="Delete Dispatch"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDispatchToDelete(row);
+              setIsDeleteModalOpen(true);
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       )
@@ -100,6 +129,17 @@ export default function Dispatch() {
           setData(prev => prev.map(d => d.id === updatedDispatch.id ? updatedDispatch : d));
         }}
         dispatchToEdit={dispatchToEdit}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDispatchToDelete(null);
+        }}
+        onConfirm={handleDeleteDispatch}
+        title="Delete Dispatch"
+        message={`Are you sure you want to delete dispatch ${dispatchToDelete?.dispatchNo}? This action cannot be undone.`}
       />
     </>
   );

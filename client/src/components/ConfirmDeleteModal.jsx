@@ -16,7 +16,7 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col transform transition-all">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center text-red-600 space-x-2">

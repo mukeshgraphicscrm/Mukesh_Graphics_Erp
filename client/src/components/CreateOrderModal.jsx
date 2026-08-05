@@ -255,7 +255,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
   const productOptions = filteredProducts.map(p => ({ value: p.id, label: p.name }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-8 flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <h2 className="text-lg font-bold text-gray-900">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, User, Calendar, Clock, AlertTriangle, Plus } from 'lucide-react';
 import api from '../lib/api';
 import CreateJobModal from '../components/CreateJobModal';
+import ScheduleDispatchModal from '../components/ScheduleDispatchModal';
 const stages = [
   { id: 1, name: 'Printing', key: 'Printing' },
   { id: 2, name: 'Lamination', key: 'Lamination' },
@@ -17,6 +18,9 @@ export default function Production() {
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
+  
+  const [isScheduleDispatchOpen, setIsScheduleDispatchOpen] = useState(false);
+  const [dispatchInitialData, setDispatchInitialData] = useState(null);
 
   const handleEditJob = (job) => {
     setEditingJob(job);
@@ -230,10 +234,31 @@ export default function Production() {
           setIsCreateModalOpen(false);
           setEditingJob(null);
         }}
-        onJobAdded={(newJob) => setJobs(prev => [...prev, newJob])}
-        onJobUpdated={(updatedJob) => setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j))}
+        onJobAdded={(newJob) => {
+          setJobs(prev => [...prev, newJob]);
+          if (newJob.stage === 'Ready To Dispatch') {
+            setDispatchInitialData({ customer: newJob.customerName });
+            setIsScheduleDispatchOpen(true);
+          }
+        }}
+        onJobUpdated={(updatedJob) => {
+          setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
+          if (updatedJob.stage === 'Ready To Dispatch') {
+            setDispatchInitialData({ customer: updatedJob.customerName });
+            setIsScheduleDispatchOpen(true);
+          }
+        }}
         jobs={jobs}
         jobToEdit={editingJob}
+      />
+
+      <ScheduleDispatchModal
+        isOpen={isScheduleDispatchOpen}
+        onClose={() => {
+          setIsScheduleDispatchOpen(false);
+          setDispatchInitialData(null);
+        }}
+        initialData={dispatchInitialData}
       />
     </>
   );

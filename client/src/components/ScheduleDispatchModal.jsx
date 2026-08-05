@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 
-export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchScheduled, onDispatchUpdated, dispatchToEdit }) {
+export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchScheduled, onDispatchUpdated, dispatchToEdit, initialData }) {
   const [formData, setFormData] = useState({
     dispatchNo: '',
     customer: '',
@@ -16,7 +16,6 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Auto-generate DSP number or set existing data when modal opens
     if (isOpen) {
       if (dispatchToEdit) {
         setFormData({
@@ -28,14 +27,36 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
           status: dispatchToEdit.status || 'Scheduled',
         });
       } else {
-        const randomNum = Math.floor(100 + Math.random() * 900);
-        setFormData({
-          dispatchNo: `DSP-${randomNum}`,
-          customer: '',
-          vehicleNo: '',
-          driver: '',
-          date: new Date().toISOString().split('T')[0],
-          status: 'Scheduled',
+        api.get('/dispatches').then(res => {
+          const dispatches = res.data || [];
+          let nextNum = 1;
+          const prefix = 'DSP-';
+          const dspDispatches = dispatches.filter(d => d.dispatchNo && d.dispatchNo.startsWith(prefix));
+          if (dspDispatches.length > 0) {
+            const nums = dspDispatches.map(d => parseInt(d.dispatchNo.split('-')[1], 10) || 0);
+            nextNum = Math.max(...nums) + 1;
+          }
+          const nextDispatchNo = `${prefix}${String(nextNum).padStart(3, '0')}`;
+          
+          setFormData({
+            dispatchNo: nextDispatchNo,
+            customer: initialData ? initialData.customer || '' : '',
+            vehicleNo: '',
+            driver: '',
+            date: new Date().toISOString().split('T')[0],
+            status: 'Scheduled',
+          });
+        }).catch(err => {
+          console.error('Error fetching dispatches for sequence:', err);
+          // Fallback if error
+          setFormData({
+            dispatchNo: 'DSP-001',
+            customer: initialData ? initialData.customer || '' : '',
+            vehicleNo: '',
+            driver: '',
+            date: new Date().toISOString().split('T')[0],
+            status: 'Scheduled',
+          });
         });
       }
     }
@@ -55,7 +76,8 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const upperValue = typeof value === 'string' && name !== 'date' ? value.toUpperCase() : value;
+    setFormData((prev) => ({ ...prev, [name]: upperValue }));
   };
 
   const handleSubmit = async (e) => {
@@ -94,7 +116,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">{dispatchToEdit ? 'Edit Dispatch' : 'Schedule Dispatch'}</h2>
@@ -107,17 +129,33 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
           
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-              <input
-                type="text"
-                name="customer"
-                required
-                value={formData.customer}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
-                placeholder="e.g. Amul Foods"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Dispatch No</label>
+                <input
+                  type="text"
+                  name="dispatchNo"
+                  required
+                  value={formData.dispatchNo}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
+                  placeholder="e.g. DSP-001"
+                  readOnly={!!dispatchToEdit}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                <input
+                  type="text"
+                  name="customer"
+                  required
+                  value={formData.customer}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
+                  placeholder="e.g. Amul Foods"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
