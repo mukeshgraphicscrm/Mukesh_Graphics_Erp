@@ -54,7 +54,7 @@ export default function Orders() {
 
   const columns = [
     { header: 'Order No.', accessor: row => row.orderNo, render: row => <span className="font-medium text-brand-accent">{row.orderNo}</span> },
-    { header: 'Customer', accessor: row => customers[row.customerId]?.name || row.customerId },
+    { header: 'Customer', accessor: row => customers[row.customerId]?.name || 'Deleted Customer' },
     { 
       header: 'Product', 
       accessor: row => {

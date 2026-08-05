@@ -21,6 +21,16 @@ export default function Products() {
   const [isExporting, setIsExporting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && showExportModal) {
+        setShowExportModal(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showExportModal]);
+
   const handleExportClick = () => {
     if (filteredProducts.length === 0) {
       toast.error('No products to export');

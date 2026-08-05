@@ -253,11 +253,10 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions</label>
               <input
                 type="text"
                 name="dimensions"
-                required
                 disabled={isViewMode}
                 value={formData.dimensions}
                 onChange={handleChange}

@@ -145,9 +145,9 @@ export default function DataTable({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-gray-200 rounded-xl bg-white shadow-sm mb-6">
+      <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-260px)] border border-gray-200 rounded-xl bg-white shadow-sm mb-6 scrollbar-thin scrollbar-thumb-gray-200">
         <table className="min-w-full divide-y divide-gray-100">
-          <thead className="bg-white">
+          <thead className="bg-white sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.05)] outline outline-1 outline-gray-200">
             <tr>
               {columns.map((col, idx) => (
                 <th
