@@ -75,10 +75,15 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
           quotationNo: quotationToEdit.quotationNo || '',
           companyName: quotationToEdit.companyName || '',
           customerId: quotationToEdit.customerId || '',
-          productId: quotationToEdit.productId || '',
-          specs: quotationToEdit.specs || '',
-          qty: formatIndianNumber(quotationToEdit.qty) || '',
-          price: formatIndianNumber(quotationToEdit.price) || '',
+          productId: quotationToEdit.productId ? (Array.isArray(quotationToEdit.productId) ? quotationToEdit.productId : [quotationToEdit.productId]) : [],
+          items: quotationToEdit.items || [
+            {
+              productId: quotationToEdit.productId,
+              specs: quotationToEdit.specs || '',
+              qty: formatIndianNumber(quotationToEdit.qty) || '',
+              price: formatIndianNumber(quotationToEdit.price) || ''
+            }
+          ].filter(i => i.productId),
           status: quotationToEdit.status || 'Draft',
         });
       } else {
@@ -101,10 +106,8 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
           quotationNo: nextQuotationNo,
           companyName: '',
           customerId: '',
-          productId: '',
-          specs: '',
-          qty: '',
-          price: '',
+          productId: [],
+          items: [],
           status: 'Draft',
         });
       }
@@ -131,23 +134,43 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'qty' || name === 'price') {
-      setFormData((prev) => ({ ...prev, [name]: formatIndianNumber(value) }));
-    } else {
-      const upperValue = typeof value === 'string' ? value.toUpperCase() : value;
-      setFormData((prev) => {
-        const newData = { ...prev, [name]: upperValue };
-        
-        // Auto-fill customer if company name is selected
-        if (name === 'companyName' && upperValue) {
-          const matchedCustomer = customers.find(c => (c.name || '').toUpperCase() === upperValue);
-          if (matchedCustomer) {
-            newData.customerId = matchedCustomer.id;
-          }
-        }
-        return newData;
+    
+    if (name === 'productId') {
+      setFormData(prev => {
+        const newItems = value.map(id => {
+          const existing = (prev.items || []).find(item => item.productId === id);
+          return existing || { productId: id, specs: '', qty: '', price: '' };
+        });
+        return { ...prev, productId: value, items: newItems };
       });
+      return;
     }
+
+    const upperValue = typeof value === 'string' ? value.toUpperCase() : value;
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: upperValue };
+      
+      // Auto-fill customer if company name is selected
+      if (name === 'companyName' && upperValue) {
+        const matchedCustomer = customers.find(c => (c.name || '').toUpperCase() === upperValue);
+        if (matchedCustomer) {
+          newData.customerId = matchedCustomer.id;
+        }
+      }
+      return newData;
+    });
+  };
+
+  const handleItemChange = (index, field, value) => {
+    setFormData(prev => {
+      const newItems = [...(prev.items || [])];
+      if (field === 'qty' || field === 'price') {
+        newItems[index] = { ...newItems[index], [field]: formatIndianNumber(value) };
+      } else {
+        newItems[index] = { ...newItems[index], [field]: typeof value === 'string' ? value.toUpperCase() : value };
+      }
+      return { ...prev, items: newItems };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -157,8 +180,11 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     try {
       const payload = {
         ...formData,
-        qty: Number(formData.qty.toString().replace(/,/g, '')),
-        price: Number(formData.price.toString().replace(/,/g, '')),
+        items: (formData.items || []).map(item => ({
+          ...item,
+          qty: Number((item.qty || '0').toString().replace(/,/g, '')),
+          price: Number((item.price || '0').toString().replace(/,/g, '')),
+        }))
       };
       setIsViewMode(!startInEditMode && !!quotationToEdit);
 
@@ -257,63 +283,74 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-                <input
-                  type="text"
+                <CustomSelect
                   name="productId"
-                  required
                   value={formData.productId}
                   onChange={handleChange}
-                  disabled={isViewMode}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
-                  placeholder="e.g. Premium Carton"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Specs *</label>
-                <input
-                  type="text"
-                  name="specs"
+                  options={(formData.companyName ? products.filter(p => p.companyName === formData.companyName) : products).map(p => ({ value: p.id, label: p.name }))}
+                  placeholder="Select Products"
                   required
-                  value={formData.specs}
-                  onChange={handleChange}
                   disabled={isViewMode}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
-                  placeholder="e.g. 350 GSM Duplex · 5 Color Offset"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
-                <input
-                  type="text"
-                  name="qty"
-                  required
-                  min="1"
-                  value={formData.qty}
-                  onChange={handleChange}
-                  disabled={isViewMode}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
-                  placeholder="e.g. 50000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price (₹) *</label>
-                <input
-                  type="text"
-                  name="price"
-                  required
-                  step="0.01"
-                  min="0"
-                  value={formData.price}
-                  onChange={handleChange}
-                  disabled={isViewMode}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
-                  placeholder="e.g. 4.20"
+                  isMulti={true}
                 />
               </div>
             </div>
+
+            {formData.items && formData.items.length > 0 && (
+              <div className="mt-6 space-y-6">
+                {formData.items.map((item, index) => {
+                  const productName = products.find(p => p.id === item.productId)?.name || 'Product';
+                  return (
+                    <div key={item.productId} className="border-t border-gray-100 pt-4">
+                      <h3 className="text-sm font-bold text-[#E8A33D] mb-3">{productName}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Product Specs *</label>
+                          <input
+                            type="text"
+                            required
+                            value={item.specs}
+                            onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
+                            disabled={isViewMode}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+                            placeholder="e.g. 350 GSM Duplex · 5 Color Offset"
+                          />
+                        </div>
+          
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                          <input
+                            type="text"
+                            required
+                            min="1"
+                            value={item.qty}
+                            onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
+                            disabled={isViewMode}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+                            placeholder="e.g. 50000"
+                          />
+                        </div>
+          
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price (₹) *</label>
+                          <input
+                            type="text"
+                            required
+                            step="0.01"
+                            min="0"
+                            value={item.price}
+                            onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                            disabled={isViewMode}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+                            placeholder="e.g. 4.20"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             <div className={`mt-8 flex ${quotationToEdit ? 'justify-between' : 'justify-end'} items-center border-t border-gray-100 pt-5`}>
               {quotationToEdit && (
