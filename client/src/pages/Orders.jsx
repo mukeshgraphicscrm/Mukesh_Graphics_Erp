@@ -55,9 +55,59 @@ export default function Orders() {
   const columns = [
     { header: 'Order No.', accessor: row => row.orderNo, render: row => <span className="font-medium text-brand-accent">{row.orderNo}</span> },
     { header: 'Customer', accessor: row => customers[row.customerId]?.name || row.customerId },
-    { header: 'Product', accessor: row => products[row.productId]?.name || row.productId },
-    { header: 'Quantity', accessor: row => row.quantity.toLocaleString('en-IN') },
-    { header: 'Amount', accessor: row => `₹${row.amount.toLocaleString('en-IN')}` },
+    { 
+      header: 'Product', 
+      accessor: row => {
+        if (Array.isArray(row.productId)) {
+          return row.productId.map(id => products[id]?.name || id).join(', ');
+        }
+        return products[row.productId]?.name || row.productId;
+      },
+      render: row => {
+        if (Array.isArray(row.productId)) {
+          return (
+            <div className="flex flex-col gap-1">
+              {row.productId.map((id) => (
+                <div key={id} className="whitespace-nowrap text-sm font-medium text-gray-900">{products[id]?.name || id}</div>
+              ))}
+            </div>
+          );
+        }
+        return <span className="whitespace-nowrap font-medium text-gray-900">{products[row.productId]?.name || row.productId}</span>;
+      }
+    },
+    { 
+      header: 'Quantity', 
+      accessor: row => row.quantity.toLocaleString('en-IN'),
+      render: row => {
+        if (Array.isArray(row.productId) && row.quantities) {
+          return (
+            <div className="flex flex-col gap-1">
+              {row.productId.map(id => (
+                <div key={id} className="whitespace-nowrap text-sm text-gray-600">{row.quantities[id] || '0'}</div>
+              ))}
+            </div>
+          );
+        }
+        return <span className="text-gray-600">{row.quantity.toLocaleString('en-IN')}</span>;
+      }
+    },
+    { 
+      header: 'Amount', 
+      accessor: row => `₹${row.amount.toLocaleString('en-IN')}`,
+      render: row => {
+        if (Array.isArray(row.productId) && row.amounts) {
+          return (
+            <div className="flex flex-col gap-1">
+              {row.productId.map(id => (
+                <div key={id} className="whitespace-nowrap text-sm text-gray-600">₹{row.amounts[id] || '0'}</div>
+              ))}
+            </div>
+          );
+        }
+        return <span className="text-gray-600">₹{row.amount.toLocaleString('en-IN')}</span>;
+      }
+    },
     { header: 'Delivery Date', accessor: row => new Date(row.deliveryDate).toLocaleDateString('en-IN') },
     { header: 'Status', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
   ];

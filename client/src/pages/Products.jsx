@@ -19,13 +19,18 @@ export default function Products() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
-  const handleExport = async () => {
+  const handleExportClick = () => {
     if (filteredProducts.length === 0) {
       toast.error('No products to export');
       return;
     }
-    
+    setShowExportModal(true);
+  };
+
+  const handleExport = async (withPrice) => {
+    setShowExportModal(false);
     setIsExporting(true);
     const toastId = toast.loading('Generating PDF Catalog...');
     
@@ -151,16 +156,18 @@ export default function Products() {
         doc.setDrawColor(240, 240, 240);
         doc.line(xPos, yPos + 86, xPos + cardWidth, yPos + 86);
         
-        // Unit Price
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(150, 150, 150);
-        doc.text("Unit price", xPos + 5, yPos + 94);
-        
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.setTextColor(27, 47, 99);
-        doc.text(`Rs ${Number(p.unitPrice || 0).toLocaleString('en-IN')}`, xPos + cardWidth - 5, yPos + 94, { align: 'right' });
+        if (withPrice) {
+          // Unit Price
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.setTextColor(150, 150, 150);
+          doc.text("Unit price", xPos + 5, yPos + 94);
+          
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.setTextColor(27, 47, 99);
+          doc.text(`Rs ${Number(p.unitPrice || 0).toLocaleString('en-IN')}`, xPos + cardWidth - 5, yPos + 94, { align: 'right' });
+        }
         
         col++;
         if (col === 2) {
@@ -178,7 +185,11 @@ export default function Products() {
         doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
       }
 
-      doc.save('Product_Catalog.pdf');
+      const date = new Date();
+      const dd = date.getDate().toString().padStart(2, '0');
+      const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+      const yyyy = date.getFullYear();
+      doc.save(`Product_Catalog_${dd}-${mm}-${yyyy}.pdf`);
       toast.success('Catalog exported successfully!', { id: toastId });
     } catch (error) {
       console.error('Export Error:', error);
@@ -279,7 +290,7 @@ export default function Products() {
               />
             </div>
             <button 
-              onClick={handleExport}
+              onClick={handleExportClick}
               disabled={isExporting}
               className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
             >
@@ -385,6 +396,34 @@ export default function Products() {
           // Optionally do something with the new category
         }}
       />
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 border border-gray-100">
+            <h3 className="text-lg font-bold text-[#1b2f63] mb-2">Export Options</h3>
+            <p className="text-sm text-gray-500 mb-6">How would you like to export the product catalog?</p>
+            <div className="flex flex-col space-y-3">
+              <button 
+                onClick={() => handleExport(true)}
+                className="w-full px-4 py-2.5 bg-[#EA580C] text-white font-medium rounded-lg hover:bg-[#EA580C]/90 transition-colors shadow-sm"
+              >
+                With Price
+              </button>
+              <button 
+                onClick={() => handleExport(false)}
+                className="w-full px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors shadow-sm"
+              >
+                Without Price
+              </button>
+              <button 
+                onClick={() => setShowExportModal(false)}
+                className="w-full px-4 py-2.5 bg-white text-gray-500 font-medium rounded-lg hover:bg-gray-50 border border-gray-200 mt-2 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

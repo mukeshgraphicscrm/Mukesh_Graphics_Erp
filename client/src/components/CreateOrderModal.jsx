@@ -9,16 +9,17 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
   const [isViewMode, setIsViewMode] = useState(false);
   const [formData, setFormData] = useState({
     orderNo: '',
+    orderNo: '',
     customerId: '',
-    productId: '',
-    quantity: '',
-    amount: '',
+    productId: [],
+    quantities: {},
+    amounts: {},
     orderDate: '',
     deliveryDate: '',
     notes: '',
     status: 'Approved',
   });
-  
+
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -47,8 +48,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         onClose();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, isDeleteModalOpen]);
 
   useEffect(() => {
@@ -69,12 +70,24 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
       setIsViewMode(!startInEditMode && !!orderToEdit);
 
       if (orderToEdit) {
+        const pIds = Array.isArray(orderToEdit.productId) ? orderToEdit.productId : (orderToEdit.productId ? [orderToEdit.productId] : []);
+        const initQuantities = orderToEdit.quantities || {};
+        const initAmounts = orderToEdit.amounts || {};
+        
+        // Backward compatibility for old single-product orders
+        if (!orderToEdit.quantities && pIds.length > 0) {
+          initQuantities[pIds[0]] = formatIndianNumber(orderToEdit.quantity || '');
+        }
+        if (!orderToEdit.amounts && pIds.length > 0) {
+          initAmounts[pIds[0]] = formatIndianNumber(orderToEdit.amount || '');
+        }
+
         setFormData({
           orderNo: orderToEdit.orderNo || '',
           customerId: orderToEdit.customerId || '',
-          productId: orderToEdit.productId || '',
-          quantity: formatIndianNumber(orderToEdit.quantity || ''),
-          amount: formatIndianNumber(orderToEdit.amount || ''),
+          productId: pIds,
+          quantities: initQuantities,
+          amounts: initAmounts,
           orderDate: orderToEdit.orderDate ? new Date(orderToEdit.orderDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           deliveryDate: orderToEdit.deliveryDate ? new Date(orderToEdit.deliveryDate).toISOString().split('T')[0] : '',
           notes: orderToEdit.notes || '',
@@ -93,24 +106,51 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
           }
         }
         const nextOrderNo = `ORD-${String(nextNum).padStart(3, '0')}`;
-        
+
+        const pIds = initialData?.productId ? [initialData.productId] : [];
+        const initQuantities = {};
+        const initAmounts = {};
+        if (pIds.length > 0) {
+          initQuantities[pIds[0]] = formatIndianNumber(initialData?.qty || '');
+          initAmounts[pIds[0]] = formatIndianNumber((initialData?.qty || 0) * (initialData?.price || 0) || '');
+        }
+
         // Reset form on open
         setFormData({
           orderNo: nextOrderNo,
           customerId: initialData?.customerId || '',
-          productId: initialData?.productId || '',
-          quantity: formatIndianNumber(initialData?.qty || ''),
-          amount: formatIndianNumber((initialData?.qty || 0) * (initialData?.price || 0) || ''),
+          productId: pIds,
+          quantities: initQuantities,
+          amounts: initAmounts,
           orderDate: new Date().toISOString().split('T')[0],
           deliveryDate: new Date().toISOString().split('T')[0],
           notes: initialData?.specs ? `Specs: ${initialData.specs}` : '',
-          status: 'Job Preparation',
+          status: 'Approved',
         });
 
         setIsViewMode(false);
       }
     }
   }, [isOpen, orders, orderToEdit, startInEditMode, initialData]);
+
+  useEffect(() => {
+    if (formData.customerId && formData.productId && formData.productId.length > 0) {
+      const selectedCustomer = customers.find(c => c.id === formData.customerId);
+      if (selectedCustomer) {
+        const productIds = Array.isArray(formData.productId) ? formData.productId : [formData.productId];
+        let hasInvalid = false;
+        productIds.forEach(id => {
+          const product = products.find(p => p.id === id);
+          if (product && (!product.companyName || product.companyName !== selectedCustomer.name)) {
+            hasInvalid = true;
+          }
+        });
+        if (hasInvalid) {
+          setFormData(prev => ({ ...prev, productId: [] }));
+        }
+      }
+    }
+  }, [formData.customerId, formData.productId, customers, products]);
 
   if (!isOpen) return null;
 
@@ -134,10 +174,13 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     setLoading(true);
     setError(null);
     try {
+      const totalQuantity = formData.productId.reduce((sum, id) => sum + Number((formData.quantities[id] || '0').toString().replace(/,/g, '')), 0);
+      const totalAmount = formData.productId.reduce((sum, id) => sum + Number((formData.amounts[id] || '0').toString().replace(/,/g, '')), 0);
+
       const payload = {
         ...formData,
-        quantity: Number(formData.quantity.toString().replace(/,/g, '')),
-        amount: Number(formData.amount.toString().replace(/,/g, '')),
+        quantity: totalQuantity,
+        amount: totalAmount,
       };
       if (orderToEdit) {
         const res = await api.put(`/orders/${orderToEdit.id}`, payload);
@@ -188,13 +231,18 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     { value: 'Completed', label: 'Completed' },
   ];
 
+  const selectedCustomer = customers.find(c => c.id === formData.customerId);
+  const filteredProducts = selectedCustomer
+    ? products.filter(p => p.companyName && p.companyName === selectedCustomer.name)
+    : products;
+
   const customerOptions = customers.map(c => ({ value: c.id, label: c.name }));
-  const productOptions = products.map(p => ({ value: p.id, label: p.name }));
+  const productOptions = filteredProducts.map(p => ({ value: p.id, label: p.name }));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-8">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-8 flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <h2 className="text-lg font-bold text-gray-900">
             {isViewMode ? 'View Order' : (orderToEdit ? 'Edit Order' : 'Create Order')}
           </h2>
@@ -202,14 +250,14 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         {fetching ? (
-          <div className="p-8 text-center text-gray-500">Loading form data...</div>
+          <div className="p-8 text-center text-gray-500 flex-1">Loading form data...</div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6">
-            {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <div className="p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 flex-1">
+              {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Order No *</label>
                 <input
@@ -232,7 +280,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
                 <CustomSelect
@@ -246,7 +294,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                 />
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product *</label>
                 <CustomSelect
                   name="productId"
@@ -254,42 +302,73 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                   onChange={handleChange}
                   options={productOptions}
                   placeholder="Select Product"
-                  disabled={isViewMode}
+                  disabled={isViewMode || !formData.customerId}
+                  isMulti={true}
                   required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
-                <input
-                  type="text"
-                  name="quantity"
-                  required
-                  value={formData.quantity}
-                  onChange={handleNumberChange}
-                  disabled={isViewMode}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${
-                    isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                  }`}
-                  placeholder="e.g. 50,000"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
-                <input
-                  type="text"
-                  name="amount"
-                  required
-                  value={formData.amount}
-                  onChange={handleNumberChange}
-                  disabled={isViewMode}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${
-                    isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                  }`}
-                  placeholder="e.g. 25,000"
-                />
-              </div>
+              {formData.productId.length > 0 && formData.productId.map((id, index) => {
+                const product = products.find(p => p.id === id);
+                return (
+                  <div key={id} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-200">
+                    <div className="md:col-span-2 font-bold text-gray-900 text-sm border-b border-gray-200 pb-2 mb-2">
+                      {index + 1}. {product?.name || 'Unknown Product'}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                      <input
+                        type="text"
+                        name={`quantity_${id}`}
+                        required
+                        value={formData.quantities[id] || ''}
+                        onChange={(e) => {
+                          const formatted = formatIndianNumber(e.target.value);
+                          setFormData(prev => {
+                            const newQuantities = { ...prev.quantities, [id]: formatted };
+                            const newAmounts = { ...prev.amounts };
+                            
+                            const quantityVal = Number(formatted.replace(/,/g, ''));
+                            if (product && product.unitPrice) {
+                              const price = Number(product.unitPrice.toString().replace(/,/g, ''));
+                              if (!isNaN(price) && !isNaN(quantityVal)) {
+                                const calculatedAmount = quantityVal * price;
+                                const roundedAmount = Math.round(calculatedAmount * 100) / 100;
+                                newAmounts[id] = formatIndianNumber(roundedAmount);
+                              }
+                            }
+                            
+                            return { ...prev, quantities: newQuantities, amounts: newAmounts };
+                          });
+                        }}
+                        disabled={isViewMode}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${
+                          isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'
+                        }`}
+                        placeholder="e.g. 50,000"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
+                      <input
+                        type="text"
+                        name={`amount_${id}`}
+                        required
+                        value={formData.amounts[id] || ''}
+                        onChange={(e) => {
+                          const formatted = formatIndianNumber(e.target.value);
+                          setFormData(prev => ({ ...prev, amounts: { ...prev.amounts, [id]: formatted } }));
+                        }}
+                        disabled={isViewMode}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${
+                          isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'
+                        }`}
+                        placeholder="e.g. 25,000"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Order Date *</label>
@@ -301,9 +380,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                   value={formData.orderDate}
                   onChange={handleChange}
                   disabled={isViewMode}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${
-                    isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                    }`}
                 />
               </div>
 
@@ -317,9 +395,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                   value={formData.deliveryDate}
                   onChange={handleChange}
                   disabled={isViewMode}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${
-                    isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                    }`}
                 />
               </div>
 
@@ -331,15 +408,15 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                   onChange={handleChange}
                   disabled={isViewMode}
                   rows={3}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none ${
-                    isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                    }`}
                   placeholder="Enter any additional notes or instructions..."
                 />
               </div>
             </div>
-            
-            <div className={`mt-8 flex ${orderToEdit ? 'justify-between' : 'justify-end'} items-center border-t border-gray-100 pt-5`}>
+            </div>
+
+            <div className={`px-6 py-4 flex ${orderToEdit ? 'justify-between' : 'justify-end'} items-center border-t border-gray-100 bg-gray-50 flex-shrink-0`}>
               {orderToEdit && (
                 <button
                   type="button"
