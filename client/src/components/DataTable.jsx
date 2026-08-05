@@ -9,7 +9,8 @@ export default function DataTable({
   columns,
   data,
   onRowClick,
-  searchPlaceholder = "Search records..."
+  searchPlaceholder = "Search records...",
+  toolbarExtra
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -19,9 +20,16 @@ export default function DataTable({
     // Global search
     let matchesSearch = true;
     if (searchTerm) {
-      matchesSearch = Object.values(row).some(val =>
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const term = searchTerm.toLowerCase();
+      matchesSearch = columns.some(column => {
+        // Use exportAccessor if available (since it formats arrays/objects nicely to string), else accessor
+        const val = column.exportAccessor ? column.exportAccessor(row) : column.accessor(row);
+        
+        if (Array.isArray(val)) {
+          return val.some(v => String(v).toLowerCase().includes(term));
+        }
+        return String(val || '').toLowerCase().includes(term);
+      });
     }
 
     if (!matchesSearch) return false;
@@ -161,20 +169,27 @@ export default function DataTable({
       )}
 
       {/* Toolbar */}
-      <div className="pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="relative w-full flex-1 sm:max-w-none sm:mr-4">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
+      <div className="pb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
+          <div className="relative w-full flex-1">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent sm:text-[13px] transition-colors shadow-sm"
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <input
-            type="text"
-            className="block w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent sm:text-[13px] transition-colors shadow-sm"
-            placeholder={searchPlaceholder}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          {toolbarExtra && (
+            <div className="flex items-center shrink-0">
+              {toolbarExtra}
+            </div>
+          )}
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 shrink-0">
           {showFilters && (
             <button
               onClick={() => {

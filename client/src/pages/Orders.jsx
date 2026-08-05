@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import DataTable from '../components/DataTable';
@@ -14,6 +14,8 @@ export default function Orders() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState(null);
   const [startInEditMode, setStartInEditMode] = useState(false);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const [initialData, setInitialData] = useState(null);
@@ -126,9 +128,23 @@ export default function Orders() {
         return <span className="text-gray-600">₹{row.amount.toLocaleString('en-IN')}</span>;
       }
     },
+    { header: 'Order Date', accessor: row => row.orderDate ? new Date(row.orderDate).toLocaleDateString('en-IN') : '-' },
     { header: 'Delivery Date', accessor: row => new Date(row.deliveryDate).toLocaleDateString('en-IN') },
     { header: 'Status', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
   ];
+
+  const filteredOrders = useMemo(() => {
+    let result = data;
+    if (fromDate) {
+      result = result.filter(o => o.orderDate && new Date(o.orderDate) >= new Date(fromDate));
+    }
+    if (toDate) {
+      const end = new Date(toDate);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter(o => o.orderDate && new Date(o.orderDate) <= end);
+    }
+    return result;
+  }, [data, fromDate, toDate]);
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Orders...</div>;
 
@@ -144,11 +160,30 @@ export default function Orders() {
     setData((prev) => prev.filter(o => o.id !== orderId));
   };
 
+  const dateFilterToolbar = (
+    <div className="flex items-center space-x-2">
+      <input 
+        type="date" 
+        className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent shadow-sm"
+        value={fromDate}
+        onChange={(e) => setFromDate(e.target.value)}
+      />
+      <span className="text-gray-400 font-medium">-</span>
+      <input 
+        type="date" 
+        className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent shadow-sm"
+        value={toDate}
+        onChange={(e) => setToDate(e.target.value)}
+      />
+    </div>
+  );
+
   return (
     <div className="h-[calc(100vh-8rem)]">
       <DataTable
         title="Order Management"
         subtitle="Track and manage all customer orders."
+        toolbarExtra={dateFilterToolbar}
         actionButton={
           <button 
             onClick={() => {
@@ -163,7 +198,7 @@ export default function Orders() {
           </button>
         }
         columns={columns}
-        data={data}
+        data={filteredOrders}
         onRowClick={(row) => {
           setStartInEditMode(false);
           setOrderToEdit(row);
