@@ -342,7 +342,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                             type="text"
                             required
                             min="1"
-                            value={item.qty}
+                            value={isViewMode && item.qty ? Number(item.qty).toLocaleString('en-IN') : item.qty}
                             onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
                             disabled={isViewMode}
                             className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
@@ -357,7 +357,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                             required
                             step="0.01"
                             min="0"
-                            value={item.price}
+                            value={isViewMode && item.price ? Number(item.price).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : item.price}
                             onChange={(e) => handleItemChange(index, 'price', e.target.value)}
                             disabled={isViewMode}
                             className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}

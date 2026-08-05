@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import ConfirmMoveModal from '../components/ConfirmMoveModal';
 import CreateQuotationModal from '../components/CreateQuotationModal';
 import api from '../lib/api';
 import { generateQuotationPDF } from '../lib/pdfGenerator';
@@ -22,6 +23,9 @@ export default function Quotations() {
   const navigate = useNavigate();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [quotationToDelete, setQuotationToDelete] = useState(null);
+  
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [quotationToMove, setQuotationToMove] = useState(null);
 
 
   useEffect(() => {
@@ -147,7 +151,7 @@ export default function Quotations() {
     {
       header: 'ACTION',
       accessor: 'action',
-      render: row => <QuotationActions row={row} onEdit={handleEdit} onDelete={handleDeleteClick} onMoveToOrder={handleMoveToOrder} />
+      render: row => <QuotationActions row={row} onEdit={handleEdit} onDelete={handleDeleteClick} onMoveToOrder={handleMoveToOrderClick} />
     }
   ];
 
@@ -179,8 +183,15 @@ export default function Quotations() {
     }
   };
 
-  const handleMoveToOrder = async (quote) => {
-    navigate('/orders', { state: { convertQuote: quote } });
+  const handleMoveToOrderClick = (quote) => {
+    setQuotationToMove(quote);
+    setIsMoveModalOpen(true);
+  };
+
+  const confirmMoveToOrder = () => {
+    if (quotationToMove) {
+      navigate('/orders', { state: { convertQuote: quotationToMove } });
+    }
   };
 
   const generatePDF = async (quote) => {
@@ -255,6 +266,17 @@ export default function Quotations() {
         onConfirm={confirmDelete}
         title="Delete Quotation"
         message="Are you sure you want to delete this quotation? This action cannot be undone."
+      />
+      
+      <ConfirmMoveModal
+        isOpen={isMoveModalOpen}
+        onClose={() => {
+          setIsMoveModalOpen(false);
+          setQuotationToMove(null);
+        }}
+        onConfirm={confirmMoveToOrder}
+        title="Move to Order"
+        message={`Are you sure you want to convert Quotation ${quotationToMove?.quotationNo || ''} into an Order?`}
       />
     </div>
   );

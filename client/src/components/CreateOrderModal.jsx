@@ -107,12 +107,27 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         }
         const nextOrderNo = `ORD-${String(nextNum).padStart(3, '0')}`;
 
-        const pIds = initialData?.productId ? [initialData.productId] : [];
+        let pIds = [];
         const initQuantities = {};
         const initAmounts = {};
-        if (pIds.length > 0) {
-          initQuantities[pIds[0]] = formatIndianNumber(initialData?.qty || '');
-          initAmounts[pIds[0]] = formatIndianNumber((initialData?.qty || 0) * (initialData?.price || 0) || '');
+        let initialNotes = '';
+
+        if (initialData?.items && initialData.items.length > 0) {
+          initialData.items.forEach(item => {
+            if (item.productId) {
+              pIds.push(item.productId);
+              initQuantities[item.productId] = formatIndianNumber(item.qty || '');
+              const calculatedAmount = (Number(item.qty) || 0) * (Number(item.price) || 0);
+              initAmounts[item.productId] = formatIndianNumber(calculatedAmount ? Number(calculatedAmount.toFixed(2)) : '');
+            }
+          });
+          initialNotes = initialData.items.map(item => item.specs ? `Specs: ${item.specs}` : '').filter(Boolean).join('\n');
+        } else if (initialData?.productId) {
+          pIds.push(initialData.productId);
+          initQuantities[initialData.productId] = formatIndianNumber(initialData?.qty || '');
+          const calculatedAmount = (Number(initialData?.qty) || 0) * (Number(initialData?.price) || 0);
+          initAmounts[initialData.productId] = formatIndianNumber(calculatedAmount ? Number(calculatedAmount.toFixed(2)) : '');
+          initialNotes = initialData?.specs ? `Specs: ${initialData.specs}` : '';
         }
 
         // Reset form on open
@@ -124,7 +139,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
           amounts: initAmounts,
           orderDate: new Date().toISOString().split('T')[0],
           deliveryDate: new Date().toISOString().split('T')[0],
-          notes: initialData?.specs ? `Specs: ${initialData.specs}` : '',
+          notes: initialNotes,
           status: 'Approved',
         });
 
