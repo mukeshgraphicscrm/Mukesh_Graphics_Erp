@@ -26,12 +26,12 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   if (!db) {
     const item = (mockData.users || []).find(i => i.id === req.params.id);
-    return item ? res.json(item) : res.status(404).json({ error: 'Not found' });
+    return res.json(item || null);
   }
   try {
     const doc = await db.collection('users').doc(req.params.id).get();
     if (!doc.exists) {
-      return res.status(404).json({ error: 'Not found' });
+      return res.json(null);
     }
     res.json({ id: doc.id, ...doc.data() });
   } catch (error) {

@@ -134,7 +134,19 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     if (name === 'qty' || name === 'price') {
       setFormData((prev) => ({ ...prev, [name]: formatIndianNumber(value) }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value }));
+      const upperValue = typeof value === 'string' ? value.toUpperCase() : value;
+      setFormData((prev) => {
+        const newData = { ...prev, [name]: upperValue };
+        
+        // Auto-fill customer if company name is selected
+        if (name === 'companyName' && upperValue) {
+          const matchedCustomer = customers.find(c => (c.name || '').toUpperCase() === upperValue);
+          if (matchedCustomer) {
+            newData.customerId = matchedCustomer.id;
+          }
+        }
+        return newData;
+      });
     }
   };
 
@@ -177,7 +189,10 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     { value: 'Rejected', label: 'Rejected' },
   ];
 
-  const customerOptions = customers.map(c => ({ value: c.id, label: c.name }));
+  const customerOptions = customers.map(c => ({ 
+    value: c.id, 
+    label: c.contactPerson ? `${c.contactPerson} (${c.name})` : c.name 
+  }));
 
   const companyOptions = Array.from(new Set(products.map(p => p.companyName).filter(Boolean))).map(name => ({
     value: name,
