@@ -160,11 +160,17 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
-              <input
-                type="text"
-                value="New Inquiry"
-                readOnly
-                className="w-full px-3 py-2 border border-gray-200 bg-gray-50 text-gray-500 rounded-md cursor-not-allowed font-medium"
+              <CustomSelect
+                name="stage"
+                value={formData.stage}
+                onChange={handleChange}
+                options={[
+                  { label: 'New Inquiry', value: 'New Inquiry' },
+                  { label: 'Follow Up', value: 'Follow Up' },
+                  { label: 'Quotation Sent', value: 'Quotation Sent' },
+                  { label: 'Won', value: 'Won' },
+                  { label: 'Lost', value: 'Lost' }
+                ]}
               />
             </div>
 

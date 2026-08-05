@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Save, Users, Trash2, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Save, Users, Trash2, Eye, EyeOff, Edit } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -18,6 +18,7 @@ export default function Settings() {
   const [showPassword, setShowPassword] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [userToEdit, setUserToEdit] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
@@ -48,8 +49,13 @@ export default function Settings() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/users', formData);
-      toast.success('User added successfully');
+      if (userToEdit) {
+        await api.put(`/users/${userToEdit.id}`, formData);
+        toast.success('User updated successfully');
+      } else {
+        await api.post('/users', formData);
+        toast.success('User added successfully');
+      }
       setFormData({
         name: '',
         mobile: '',
@@ -57,13 +63,25 @@ export default function Settings() {
         password: '',
         designation: 'Employee'
       });
+      setUserToEdit(null);
       fetchUsers();
     } catch (err) {
-      console.error('Error adding user:', err);
-      toast.error('Failed to add user');
+      console.error('Error saving user:', err);
+      toast.error(userToEdit ? 'Failed to update user' : 'Failed to add user');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditClick = (user) => {
+    setUserToEdit(user);
+    setFormData({
+      name: user.name || '',
+      mobile: user.mobile || '',
+      email: user.email || '',
+      password: '', // Leave blank when editing
+      designation: user.designation || 'Employee'
+    });
   };
 
   const handleDeleteClick = (id) => {
@@ -98,10 +116,21 @@ export default function Settings() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add User Form */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center space-x-2">
-              <UserPlus className="w-5 h-5 text-[#1b2f63]" />
-              <h3 className="font-bold text-gray-900">Add New User</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-full">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center space-x-2 bg-gray-50/50">
+              {userToEdit ? <Edit className="w-5 h-5 text-[#1b2f63]" /> : <UserPlus className="w-5 h-5 text-[#1b2f63]" />}
+              <h3 className="font-bold text-gray-900">{userToEdit ? 'Edit User' : 'Add New User'}</h3>
+              {userToEdit && (
+                <button 
+                  onClick={() => {
+                    setUserToEdit(null);
+                    setFormData({ name: '', mobile: '', email: '', password: '', designation: 'Employee' });
+                  }}
+                  className="ml-auto text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
@@ -144,16 +173,16 @@ export default function Settings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password {userToEdit ? '' : '*'}</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
-                    required
+                    required={!userToEdit}
                     value={formData.password}
                     onChange={handleChange}
                     className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
-                    placeholder="Enter a secure password"
+                    placeholder={userToEdit ? "Leave blank to keep same" : "Enter a secure password"}
                   />
                   <button
                     type="button"
@@ -195,7 +224,7 @@ export default function Settings() {
                   className="w-full flex justify-center items-center space-x-2 bg-[#1b2f63] text-white px-4 py-2.5 rounded-lg hover:bg-[#12224d] transition-colors disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{loading ? 'Saving...' : 'Add User'}</span>
+                  <span>{loading ? 'Saving...' : userToEdit ? 'Save Changes' : 'Add User'}</span>
                 </button>
               </div>
             </form>
@@ -245,13 +274,22 @@ export default function Settings() {
                         }`}>
                           {user.designation}
                         </span>
-                        <button
-                          onClick={() => handleDeleteClick(user.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                          title="Delete User"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center space-x-1 pl-2">
+                          <button
+                            onClick={() => handleEditClick(user)}
+                            className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                            title="Edit User"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(user.id)}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -81,24 +81,27 @@ router.put('/:id', async (req, res) => {
   if (!db) {
     const index = (mockData.users || []).findIndex(i => i.id === req.params.id);
     if (index > -1) {
-      mockData.users[index] = { ...mockData.users[index], ...req.body, id: req.params.id };
+      const { password, ...rest } = req.body;
+      mockData.users[index] = { ...mockData.users[index], ...rest, id: req.params.id };
       return res.json(mockData.users[index]);
     }
     return res.status(404).json({ error: 'Not found' });
   }
   try {
     const data = { ...req.body };
+    const newPassword = data.password;
     delete data.id; 
-    delete data.password; // Don't allow password updates via this basic route for now
+    delete data.password; // Don't save password to Firestore
     
     // Update in Firestore
     await db.collection('users').doc(req.params.id).update(data);
     
-    // Update in Auth if email or name changed
-    if (auth && (data.email || data.name)) {
+    // Update in Auth if email, name, or password changed
+    if (auth && (data.email || data.name || newPassword)) {
       const updateParams = {};
       if (data.email) updateParams.email = data.email;
       if (data.name) updateParams.displayName = data.name;
+      if (newPassword) updateParams.password = newPassword;
       try {
         await auth.updateUser(req.params.id, updateParams);
       } catch (authError) {
