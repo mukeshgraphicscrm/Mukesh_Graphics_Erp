@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Save, Users, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Settings() {
+  const { currentUser } = useAuth();
+  
+  // Protect the route
+  if (currentUser?.profile?.designation === 'Employee') {
+    return <Navigate to="/" replace />;
+  }
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

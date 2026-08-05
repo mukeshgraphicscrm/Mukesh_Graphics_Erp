@@ -2,7 +2,10 @@ const { initializeApp, cert, getApps } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 require('dotenv').config();
 
+const { getAuth } = require('firebase-admin/auth');
+
 let db = null;
+let auth = null;
 
 if (process.env.FIREBASE_PROJECT_ID) {
   try {
@@ -17,7 +20,8 @@ if (process.env.FIREBASE_PROJECT_ID) {
       });
     }
     db = getFirestore();
-    console.log('Firestore initialized.');
+    auth = getAuth();
+    console.log('Firestore and Auth initialized.');
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
   }
@@ -25,4 +29,4 @@ if (process.env.FIREBASE_PROJECT_ID) {
   console.warn('Firestore not initialized: Missing FIREBASE_PROJECT_ID.');
 }
 
-module.exports = { db };
+module.exports = { db, auth };

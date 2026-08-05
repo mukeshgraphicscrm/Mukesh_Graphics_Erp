@@ -36,6 +36,7 @@ app.get('/api/health', (req, res) => {
 // Import routers
 const createCrudRouter = require('./routes/crud');
 const dashboardRouter = require('./routes/dashboard');
+const usersRouter = require('./routes/users');
 
 // Dashboard metrics
 app.use('/api/dashboard', dashboardRouter);
@@ -68,9 +69,10 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 const collections = [
   'customers', 'leads', 'quotations', 'orders', 'products',
   'artworks', 'productionJobs', 'inventory', 'suppliers',
-  'purchaseOrders', 'grn', 'dispatches', 'invoices', 'categories',
-  'users'
+  'purchaseOrders', 'grn', 'dispatches', 'invoices', 'categories'
 ];
+
+app.use('/api/users', usersRouter);
 
 collections.forEach(collection => {
   app.use(`/api/${collection}`, createCrudRouter(collection));

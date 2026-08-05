@@ -30,9 +30,18 @@ const navItems = [
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
 
+import { useAuth } from '../contexts/AuthContext';
+
 export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMobileMenuOpen }) {
   const [openSubmenus, setOpenSubmenus] = useState({});
   const location = useLocation();
+  const { currentUser } = useAuth();
+  
+  const isEmployee = currentUser?.profile?.designation === 'Employee';
+  const visibleNavItems = navItems.filter(item => {
+    if (item.name === 'Settings' && isEmployee) return false;
+    return true;
+  });
 
   const toggleSubmenu = (name) => {
     setOpenSubmenus(prev => ({
@@ -73,7 +82,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
 
       {/* Nav Items */}
       <div className="flex-1 overflow-y-auto py-6 space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           if (item.subItems) {
             const isOpen = openSubmenus[item.name];
             const isChildActive = isSubItemActive(item.subItems);

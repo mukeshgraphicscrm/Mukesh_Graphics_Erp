@@ -1,7 +1,22 @@
 import React from 'react';
 import { Search, Bell, Menu } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Topbar({ onMenuClick }) {
+  const { currentUser } = useAuth();
+  
+  const name = currentUser?.displayName || currentUser?.profile?.name || 'Mukesh Patel';
+  const designation = currentUser?.profile?.designation || 'Administrator';
+  
+  const getInitials = (nameStr) => {
+    if (!nameStr) return '?';
+    const parts = nameStr.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return nameStr.substring(0, 2).toUpperCase();
+  };
+
   return (
     <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center flex-1 max-w-xl">
@@ -31,11 +46,11 @@ export default function Topbar({ onMenuClick }) {
         {/* Profile */}
         <div className="flex items-center space-x-3 border-l border-gray-200 pl-4 md:pl-6">
           <div className="text-right hidden sm:block">
-            <div className="text-sm font-medium text-gray-900 leading-none">Mukesh Patel</div>
-            <div className="text-xs text-gray-500 mt-1">Administrator</div>
+            <div className="text-sm font-medium text-gray-900 leading-none">{name}</div>
+            <div className="text-xs text-gray-500 mt-1">{designation}</div>
           </div>
           <div className="h-9 w-9 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-sm">
-            MP
+            {getInitials(name)}
           </div>
         </div>
       </div>
