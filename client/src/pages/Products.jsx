@@ -403,7 +403,13 @@ export default function Products() {
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         onCategoryAdded={(newCat) => {
-          // Optionally do something with the new category
+          setCategories(prev => [...prev, newCat]);
+        }}
+        onCategoryUpdated={(updatedCat) => {
+          setCategories(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
+        }}
+        onCategoryDeleted={(catId) => {
+          setCategories(prev => prev.filter(c => c.id !== catId));
         }}
       />
       {showExportModal && (
