@@ -63,10 +63,10 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Company / Supplier Name *</label>
@@ -80,7 +80,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
                 placeholder="e.g. Acme Materials"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
               <input
@@ -92,7 +92,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
                 placeholder="e.g. John Doe"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mobile</label>
@@ -125,7 +125,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
                 />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">GST Number</label>
               <input
@@ -138,7 +138,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
               />
             </div>
           </div>
-          
+
           <div className="mt-8 flex justify-end space-x-3">
             <button
               type="button"
