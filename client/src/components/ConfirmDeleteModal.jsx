@@ -10,7 +10,19 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, 
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (isOpen) {
+        document.body.style.overflow = 'unset';
+        document.documentElement.style.overflow = 'unset';
+      }
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -27,11 +39,11 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title, 
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <div className="p-6 text-gray-600">
           {message || 'Are you sure you want to delete this item? This action cannot be undone.'}
         </div>
-        
+
         <div className="flex justify-end space-x-3 border-t border-gray-100 px-6 py-4 shrink-0 bg-gray-50">
           <button
             type="button"

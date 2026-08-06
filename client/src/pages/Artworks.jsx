@@ -123,7 +123,7 @@ export default function Artworks() {
         );
       }
     },
-    { header: 'Customer', accessor: row => customers[row.customerId]?.name || row.customerId },
+    { header: 'Customer', accessor: row => customers[row.customerId]?.name || 'DELETED CUSTOMER' },
     { header: 'Version', accessor: row => row.version, render: row => <span className="text-gray-500">{row.version}</span> },
     { header: 'Uploaded At', accessor: row => new Date(row.uploadedAt).toLocaleDateString('en-IN') },
     { header: 'Status', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },

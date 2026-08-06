@@ -81,7 +81,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
       </div>
 
       {/* Nav Items */}
-      <div className="flex-1 overflow-y-auto py-6 space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex-1 overflow-y-auto py-4 space-y-1.5 pr-2">
         {visibleNavItems.map((item) => {
           if (item.subItems) {
             const isOpen = openSubmenus[item.name];

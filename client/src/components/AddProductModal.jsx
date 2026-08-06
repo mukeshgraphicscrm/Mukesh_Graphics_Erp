@@ -95,7 +95,19 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (isOpen) {
+        document.body.style.overflow = 'unset';
+        document.documentElement.style.overflow = 'unset';
+      }
+    };
   }, [isOpen, onClose, isDeleteModalOpen]);
 
   if (!isOpen) return null;
@@ -142,7 +154,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
         ...formData,
         unitPrice: Number(String(formData.unitPrice).replace(/,/g, '')),
       };
-      
+
       if (productToEdit) {
         const res = await api.put(`/products/${productToEdit.id}`, payload);
         if (onProductUpdated) onProductUpdated(res.data);
@@ -152,7 +164,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
         if (onProductAdded) onProductAdded(res.data);
         toast.success('Product added successfully!');
       }
-      
+
       onClose();
     } catch (err) {
       console.error('Error saving product:', err);
@@ -209,10 +221,10 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
@@ -251,7 +263,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
                 disabled={isViewMode}
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions</label>
               <input
@@ -278,7 +290,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
                 placeholder="e.g. Duplex Board"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">GSM *</label>
               <input
@@ -342,7 +354,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
                     <Upload className="w-6 h-6" />
                   </div>
                 )}
-                
+
                 <div className="flex-1">
                   <input
                     type="file"
@@ -356,7 +368,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
               </div>
             </div>
           </div>
-          
+
           <div className={`mt-8 flex ${productToEdit ? 'justify-between' : 'justify-end'} items-center space-x-3 border-t border-gray-100 pt-5`}>
             {productToEdit && (
               <button

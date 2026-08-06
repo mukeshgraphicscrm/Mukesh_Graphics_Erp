@@ -80,20 +80,20 @@ export default function Leads() {
           <h2 className="text-xl font-bold text-gray-900">Lead Pipeline</h2>
           <p className="text-sm text-gray-500 mt-1">Drag and drop leads through the sales pipeline.</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+          <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search leads..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-96 pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all"
+              className="w-full sm:w-64 lg:w-96 pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all"
             />
           </div>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="btn-add"
+            className="btn-add w-full sm:w-auto justify-center"
           >
             <Plus className="w-4 h-4 mr-1" /> <span>Add Lead</span>
           </button>

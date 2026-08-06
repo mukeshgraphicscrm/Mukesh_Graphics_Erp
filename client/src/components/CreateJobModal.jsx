@@ -32,7 +32,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     deadline: '',
     notes: '',
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -43,7 +43,19 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (isOpen) {
+        document.body.style.overflow = 'unset';
+        document.documentElement.style.overflow = 'unset';
+      }
+    };
   }, [isOpen, onClose]);
 
   useEffect(() => {
@@ -63,7 +75,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
       } else {
         const currentYear = new Date().getFullYear();
         const prefix = `JC-${currentYear}-`;
-        
+
         let nextNum = 1;
         if (jobs && jobs.length > 0) {
           const currentJobs = jobs.filter(j => j.jobCardNo && j.jobCardNo.startsWith(prefix));
@@ -76,7 +88,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           }
         }
         const nextJobNo = `${prefix}${String(nextNum).padStart(3, '0')}`;
-        
+
         // Reset form on open
         setFormData({
           jobCardNo: nextJobNo,
@@ -97,11 +109,11 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Capitalize specific text fields
     const isTextLike = ['jobCardNo', 'productName', 'customerName', 'notes'].includes(name);
     const updatedValue = isTextLike ? value.toUpperCase() : value;
-    
+
     if (name === 'stage') {
       const stageProgressMap = {
         'Printing': 20,
@@ -113,8 +125,8 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
         'Dispatched': 100,
       };
       const calculatedProgress = stageProgressMap[updatedValue] || 0;
-      setFormData((prev) => ({ 
-        ...prev, 
+      setFormData((prev) => ({
+        ...prev,
         [name]: updatedValue,
         progress: calculatedProgress.toString()
       }));
@@ -163,10 +175,10 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Job No *</label>
@@ -246,7 +258,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Deadline *</label>
               <input
@@ -258,7 +270,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
               <textarea
@@ -271,7 +283,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
               ></textarea>
             </div>
           </div>
-          
+
           <div className="mt-8 flex justify-end space-x-3 border-t border-gray-100 pt-5">
             <button
               type="button"

@@ -10,7 +10,20 @@ export default function ConfirmMoveModal({ isOpen, onClose, onConfirm, title, me
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;

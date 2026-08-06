@@ -42,7 +42,19 @@ export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, onC
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (isOpen) {
+        document.body.style.overflow = 'unset';
+        document.documentElement.style.overflow = 'unset';
+      }
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -109,10 +121,10 @@ export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, onC
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Name Of Category *</label>
@@ -127,7 +139,7 @@ export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, onC
                 placeholder="e.g. FOOD PACKAGING"
               />
             </div>
-            
+
             <div className="pt-4 border-t border-gray-100">
               <label className="block text-sm font-medium text-gray-700 mb-2">Existing Categories</label>
               {fetchingCategories ? (
@@ -170,7 +182,7 @@ export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, onC
               )}
             </div>
           </div>
-          
+
           <div className="mt-8 flex justify-end space-x-3">
             <button
               type="button"

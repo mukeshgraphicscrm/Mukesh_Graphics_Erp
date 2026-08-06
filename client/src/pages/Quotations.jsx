@@ -67,10 +67,10 @@ export default function Quotations() {
     },
     {
       header: 'CUSTOMER',
-      accessor: row => customers[row.customerId]?.name || row.customerId,
+      accessor: row => customers[row.customerId]?.name || 'DELETED CUSTOMER',
       render: row => {
         const isLost = row.leadId && leads[row.leadId]?.stage === 'Lost';
-        return <span className={`font-medium text-[13px] ${isLost ? 'text-red-600' : 'text-gray-900'}`}>{customers[row.customerId]?.name || row.customerId}</span>;
+        return <span className={`font-medium text-[13px] ${isLost ? 'text-red-600' : 'text-gray-900'}`}>{customers[row.customerId]?.name || 'DELETED CUSTOMER'}</span>;
       }
     },
     {

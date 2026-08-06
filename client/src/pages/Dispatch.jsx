@@ -48,7 +48,7 @@ export default function Dispatch() {
 
   const columns = [
     { header: 'DISPATCH No.', accessor: row => row.dispatchNo, render: row => <span className="font-bold text-gray-900 text-[13px]">{row.dispatchNo}</span> },
-    { header: 'CUSTOMER', accessor: row => row.customer || customers[row.customerId]?.name || row.customerId, render: row => <span className="text-[13px] text-gray-700 font-medium">{row.customer || customers[row.customerId]?.name || row.customerId}</span> },
+    { header: 'CUSTOMER', accessor: row => row.customer || customers[row.customerId]?.name || 'DELETED CUSTOMER', render: row => <span className="text-[13px] text-gray-700 font-medium">{row.customer || customers[row.customerId]?.name || 'DELETED CUSTOMER'}</span> },
     {
       header: 'TRANSPORTER', accessor: row => row.vehicleNo, render: row => (
         <div className="flex items-center text-gray-600 text-[13px]">

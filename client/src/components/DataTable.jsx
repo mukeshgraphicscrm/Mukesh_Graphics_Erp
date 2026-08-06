@@ -54,7 +54,8 @@ export default function DataTable({
     if (filteredData.length === 0) return;
 
     // 1. Prepare data array (Headers + Rows)
-    const headers = columns.map(c => c.header);
+    const exportColumns = columns.filter(c => c.header !== 'Actions' && !c.excludeFromExport);
+    const headers = exportColumns.map(c => c.header);
     const dataArray = [headers];
 
     const merges = [];
@@ -62,7 +63,7 @@ export default function DataTable({
 
     filteredData.forEach(row => {
       // Get all values, handling arrays (from exportAccessor)
-      const rowValues = columns.map(c => {
+      const rowValues = exportColumns.map(c => {
         const val = c.exportAccessor ? c.exportAccessor(row) : c.accessor(row);
         return val;
       });

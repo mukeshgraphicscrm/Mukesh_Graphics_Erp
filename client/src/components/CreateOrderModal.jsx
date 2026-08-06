@@ -73,7 +73,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         const pIds = Array.isArray(orderToEdit.productId) ? orderToEdit.productId : (orderToEdit.productId ? [orderToEdit.productId] : []);
         const initQuantities = orderToEdit.quantities || {};
         const initAmounts = orderToEdit.amounts || {};
-        
+
         // Backward compatibility for old single-product orders
         if (!orderToEdit.quantities && pIds.length > 0) {
           initQuantities[pIds[0]] = formatIndianNumber(orderToEdit.quantity || '');
@@ -273,162 +273,160 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
             <div className="p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 flex-1">
               {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Order No *</label>
-                <input
-                  type="text"
-                  name="orderNo"
-                  readOnly
-                  value={formData.orderNo}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Order No *</label>
+                  <input
+                    type="text"
+                    name="orderNo"
+                    readOnly
+                    value={formData.orderNo}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed focus:outline-none"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                <CustomSelect
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  options={statusOptions}
-                  disabled={isViewMode}
-                  required
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                  <CustomSelect
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    options={statusOptions}
+                    disabled={isViewMode}
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
-                <CustomSelect
-                  name="customerId"
-                  value={formData.customerId}
-                  onChange={handleChange}
-                  options={customerOptions}
-                  placeholder="Select Customer"
-                  disabled={isViewMode}
-                  required
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
+                  <CustomSelect
+                    name="customerId"
+                    value={formData.customerId}
+                    onChange={handleChange}
+                    options={customerOptions}
+                    placeholder="Select Customer"
+                    disabled={isViewMode}
+                    required
+                  />
+                </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product *</label>
-                <CustomSelect
-                  name="productId"
-                  value={formData.productId}
-                  onChange={handleChange}
-                  options={productOptions}
-                  placeholder="Select Product"
-                  disabled={isViewMode || !formData.customerId}
-                  isMulti={true}
-                  required
-                />
-              </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product *</label>
+                  <CustomSelect
+                    name="productId"
+                    value={formData.productId}
+                    onChange={handleChange}
+                    options={productOptions}
+                    placeholder="Select Product"
+                    disabled={isViewMode || !formData.customerId}
+                    isMulti={true}
+                    required
+                  />
+                </div>
 
-              {formData.productId.length > 0 && formData.productId.map((id, index) => {
-                const product = products.find(p => p.id === id);
-                return (
-                  <div key={id} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-200">
-                    <div className="md:col-span-2 font-bold text-gray-900 text-sm border-b border-gray-200 pb-2 mb-2">
-                      {index + 1}. {product?.name || 'Unknown Product'}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
-                      <input
-                        type="text"
-                        name={`quantity_${id}`}
-                        required
-                        value={formData.quantities[id] || ''}
-                        onChange={(e) => {
-                          const formatted = formatIndianNumber(e.target.value);
-                          setFormData(prev => {
-                            const newQuantities = { ...prev.quantities, [id]: formatted };
-                            const newAmounts = { ...prev.amounts };
-                            
-                            const quantityVal = Number(formatted.replace(/,/g, ''));
-                            if (product && product.unitPrice) {
-                              const price = Number(product.unitPrice.toString().replace(/,/g, ''));
-                              if (!isNaN(price) && !isNaN(quantityVal)) {
-                                const calculatedAmount = quantityVal * price;
-                                const roundedAmount = Math.round(calculatedAmount * 100) / 100;
-                                newAmounts[id] = formatIndianNumber(roundedAmount);
+                {formData.productId.length > 0 && formData.productId.map((id, index) => {
+                  const product = products.find(p => p.id === id);
+                  return (
+                    <div key={id} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-200">
+                      <div className="md:col-span-2 font-bold text-gray-900 text-sm border-b border-gray-200 pb-2 mb-2">
+                        {index + 1}. {product?.name || 'Unknown Product'}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                        <input
+                          type="text"
+                          name={`quantity_${id}`}
+                          required
+                          value={formData.quantities[id] || ''}
+                          onChange={(e) => {
+                            const formatted = formatIndianNumber(e.target.value);
+                            setFormData(prev => {
+                              const newQuantities = { ...prev.quantities, [id]: formatted };
+                              const newAmounts = { ...prev.amounts };
+
+                              const quantityVal = Number(formatted.replace(/,/g, ''));
+                              if (product && product.unitPrice) {
+                                const price = Number(product.unitPrice.toString().replace(/,/g, ''));
+                                if (!isNaN(price) && !isNaN(quantityVal)) {
+                                  const calculatedAmount = quantityVal * price;
+                                  const roundedAmount = Math.round(calculatedAmount * 100) / 100;
+                                  newAmounts[id] = formatIndianNumber(roundedAmount);
+                                }
                               }
-                            }
-                            
-                            return { ...prev, quantities: newQuantities, amounts: newAmounts };
-                          });
-                        }}
-                        disabled={isViewMode}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${
-                          isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'
-                        }`}
-                        placeholder="e.g. 50,000"
-                      />
+
+                              return { ...prev, quantities: newQuantities, amounts: newAmounts };
+                            });
+                          }}
+                          disabled={isViewMode}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'
+                            }`}
+                          placeholder="e.g. 50,000"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
+                        <input
+                          type="text"
+                          name={`amount_${id}`}
+                          required
+                          value={formData.amounts[id] || ''}
+                          onChange={(e) => {
+                            const formatted = formatIndianNumber(e.target.value);
+                            setFormData(prev => ({ ...prev, amounts: { ...prev.amounts, [id]: formatted } }));
+                          }}
+                          disabled={isViewMode}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'
+                            }`}
+                          placeholder="e.g. 25,000"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
-                      <input
-                        type="text"
-                        name={`amount_${id}`}
-                        required
-                        value={formData.amounts[id] || ''}
-                        onChange={(e) => {
-                          const formatted = formatIndianNumber(e.target.value);
-                          setFormData(prev => ({ ...prev, amounts: { ...prev.amounts, [id]: formatted } }));
-                        }}
-                        disabled={isViewMode}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${
-                          isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'
-                        }`}
-                        placeholder="e.g. 25,000"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Order Date *</label>
-                <input
-                  type="date"
-                  name="orderDate"
-                  required
-                  min={new Date().toISOString().split('T')[0]}
-                  value={formData.orderDate}
-                  onChange={handleChange}
-                  disabled={isViewMode}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                    }`}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Order Date *</label>
+                  <input
+                    type="date"
+                    name="orderDate"
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    value={formData.orderDate}
+                    onChange={handleChange}
+                    disabled={isViewMode}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                      }`}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date *</label>
-                <input
-                  type="date"
-                  name="deliveryDate"
-                  required
-                  min={new Date().toISOString().split('T')[0]}
-                  value={formData.deliveryDate}
-                  onChange={handleChange}
-                  disabled={isViewMode}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                    }`}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date *</label>
+                  <input
+                    type="date"
+                    name="deliveryDate"
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    value={formData.deliveryDate}
+                    onChange={handleChange}
+                    disabled={isViewMode}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                      }`}
+                  />
+                </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  disabled={isViewMode}
-                  rows={3}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                    }`}
-                  placeholder="Enter any additional notes or instructions..."
-                />
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    disabled={isViewMode}
+                    rows={3}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                      }`}
+                    placeholder="Enter any additional notes or instructions..."
+                  />
+                </div>
               </div>
-            </div>
             </div>
 
             <div className={`px-6 py-4 flex ${orderToEdit ? 'justify-between' : 'justify-end'} items-center border-t border-gray-100 bg-gray-50 flex-shrink-0`}>
