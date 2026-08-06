@@ -271,12 +271,12 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   const pageBottom = pageHeight - 30;
   yPos = Math.max(yPos + 20, pageBottom - 20); // ensure it's not overlapping totals
 
-  doc.setFillColor(...lightGray);
+  doc.setFillColor(255, 248, 204); // subtle highlight yellow
   doc.rect(margin, yPos, pageWidth - margin * 2, 20, 'F');
 
   doc.setFontSize(9);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(...grayText);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(40, 40, 40); // darker text for bold
   const noteText = "Note: This is your estimated bill. An original bill will be generated from this estimate after completion of your order and delivery of your shipment.";
 
   // split text to fit

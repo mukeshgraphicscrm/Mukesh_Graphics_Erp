@@ -213,13 +213,6 @@ export default function DataTable({
             <Filter className="w-4 h-4" />
             <span>Filter</span>
           </button>
-          <button
-            onClick={exportData}
-            className="flex items-center space-x-2 px-4 py-2 border border-gray-200 rounded-lg bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export</span>
-          </button>
         </div>
       </div>
 
