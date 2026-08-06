@@ -19,6 +19,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     status: 'Draft',
   });
 
+  const [activeTab, setActiveTab] = useState('Customer Quotation');
+  const [savedForms, setSavedForms] = useState({});
+
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [leads, setLeads] = useState([]);
@@ -89,6 +92,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       setIsViewMode(!startInEditMode && !!quotationToEdit);
 
       if (quotationToEdit) {
+        setActiveTab(quotationToEdit.quotationType || 'Customer Quotation');
         setFormData({
           quotationNo: quotationToEdit.quotationNo || '',
           companyName: quotationToEdit.companyName || '',
@@ -106,33 +110,52 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
           status: quotationToEdit.status || 'Draft',
         });
       } else {
-        const year = new Date().getFullYear();
-        let nextNum = 1;
-        if (quotations && quotations.length > 0) {
-          const currentYearQtns = quotations.filter(q => q.quotationNo && q.quotationNo.startsWith(`QTN-${year}-`));
-          if (currentYearQtns.length > 0) {
-            const nums = currentYearQtns.map(q => {
-              const parts = q.quotationNo.split('-');
-              return parseInt(parts[2], 10) || 0;
-            });
-            nextNum = Math.max(...nums) + 1;
-          }
-        }
-        const nextQuotationNo = `QTN-${year}-${String(nextNum).padStart(3, '0')}`;
-
-        // Reset form on open
-        setFormData({
-          quotationNo: nextQuotationNo,
-          companyName: '',
-          customerId: '',
-          leadId: '',
-          productId: [],
-          items: [],
-          status: 'Draft',
-        });
+        setSavedForms({});
+        initFreshForm('Customer Quotation');
       }
     }
   }, [isOpen, quotations, quotationToEdit, startInEditMode]);
+
+  const initFreshForm = (tab = 'Customer Quotation') => {
+    const year = new Date().getFullYear();
+    let nextNum = 1;
+    if (quotations && quotations.length > 0) {
+      const currentYearQtns = quotations.filter(q => q.quotationNo && q.quotationNo.startsWith(`QTN-${year}-`));
+      if (currentYearQtns.length > 0) {
+        const nums = currentYearQtns.map(q => {
+          const parts = q.quotationNo.split('-');
+          return parseInt(parts[2], 10) || 0;
+        });
+        nextNum = Math.max(...nums) + 1;
+      }
+    }
+    const nextQuotationNo = `QTN-${year}-${String(nextNum).padStart(3, '0')}`;
+
+    setActiveTab(tab);
+    setFormData({
+      quotationNo: nextQuotationNo,
+      companyName: '',
+      customerId: '',
+      leadId: '',
+      productId: [],
+      items: [],
+      status: 'Draft',
+    });
+  };
+
+  const handleTabSwitch = (newTab) => {
+    if (newTab === activeTab) return;
+
+    const updatedSavedForms = { ...savedForms, [activeTab]: formData };
+    setSavedForms(updatedSavedForms);
+
+    if (updatedSavedForms[newTab]) {
+      setActiveTab(newTab);
+      setFormData(updatedSavedForms[newTab]);
+    } else {
+      initFreshForm(newTab);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -154,16 +177,16 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'productId') {
       setFormData(prev => {
         const newItems = value.map(id => {
           const existing = (prev.items || []).find(item => item.productId === id);
           if (existing) return existing;
-          
+
           const product = products.find(p => p.id === id);
           const defaultPrice = product?.unitPrice ? formatIndianNumber(product.unitPrice) : '';
-          
+
           return { productId: id, specs: '', qty: '', price: defaultPrice };
         });
         return { ...prev, productId: value, items: newItems };
@@ -174,7 +197,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     const upperValue = typeof value === 'string' && !['customerId', 'leadId'].includes(name) ? value.toUpperCase() : value;
     setFormData((prev) => {
       const newData = { ...prev, [name]: upperValue };
-      
+
       // Auto-fill customer if company name is selected
       if (name === 'companyName' && upperValue) {
         const matchedCustomer = customers.find(c => (c.name || '').toUpperCase() === upperValue);
@@ -221,13 +244,13 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         const res = await api.post('/quotations', payload);
         if (onQuotationAdded) onQuotationAdded(res.data);
         toast.success('Quotation created successfully!');
-        
+
         // Automatically generate PDF for the new quotation
         const custMap = {};
         customers.forEach(c => custMap[c.id] = c);
         const prodMap = {};
         products.forEach(p => prodMap[p.id] = p);
-        
+
         try {
           await generateQuotationPDF(res.data, custMap, prodMap);
         } catch (pdfErr) {
@@ -253,9 +276,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     { value: 'Rejected', label: 'Rejected' },
   ];
 
-  const customerOptions = customers.map(c => ({ 
-    value: c.id, 
-    label: c.contactPerson ? `${c.contactPerson} (${c.name})` : c.name 
+  const customerOptions = customers.map(c => ({
+    value: c.id,
+    label: c.contactPerson ? `${c.contactPerson} (${c.name})` : c.name
   }));
 
   const companyOptions = Array.from(new Set(products.map(p => p.companyName).filter(Boolean))).map(name => ({
@@ -275,6 +298,23 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
           <h2 className="text-lg font-bold text-gray-900">{quotationToEdit ? (isViewMode ? 'View Quotation' : 'Edit Quotation') : 'Create Quotation'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex border-b border-gray-100 shrink-0">
+          <button
+            type="button"
+            onClick={() => handleTabSwitch('Customer Quotation')}
+            className={`flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors ${activeTab === 'Customer Quotation' ? 'border-[#1b2f63] text-[#1b2f63]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+          >
+            Customer Quotation
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabSwitch('Lead Quotation')}
+            className={`flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors ${activeTab === 'Lead Quotation' ? 'border-[#1b2f63] text-[#1b2f63]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+          >
+            Lead Quotation
           </button>
         </div>
 
@@ -336,17 +376,19 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                 />
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead (Optional)</label>
-                <CustomSelect
-                  name="leadId"
-                  value={formData.leadId}
-                  onChange={handleChange}
-                  options={leadOptions}
-                  placeholder="Select a Lead to Link"
-                  disabled={isViewMode}
-                />
-              </div>
+              {activeTab === 'Lead Quotation' && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead (Optional)</label>
+                  <CustomSelect
+                    name="leadId"
+                    value={formData.leadId}
+                    onChange={handleChange}
+                    options={leadOptions}
+                    placeholder="Select a Lead to Link"
+                    disabled={isViewMode}
+                  />
+                </div>
+              )}
             </div>
 
             {formData.items && formData.items.length > 0 && (
@@ -369,7 +411,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                             placeholder="e.g. 350 GSM Duplex · 5 Color Offset"
                           />
                         </div>
-          
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
                           <input
@@ -383,7 +425,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                             placeholder="e.g. 50000"
                           />
                         </div>
-          
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price (₹) *</label>
                           <input
