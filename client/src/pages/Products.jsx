@@ -325,7 +325,7 @@ export default function Products() {
               {/* Card Header (Dark Blue) */}
               <div className="bg-[#1b2f63] h-32 flex items-center justify-center overflow-hidden">
                 {product.image ? (
-                  <img src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`} alt={product.name} className="w-full h-full object-cover" />
+                  <img src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`} alt={product.name} className="w-full h-full object-contain bg-white" />
                 ) : (
                   <Box className="w-10 h-10 text-orange-400" strokeWidth={1.5} />
                 )}
