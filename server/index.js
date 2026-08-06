@@ -44,25 +44,39 @@ app.use('/api/dashboard', dashboardRouter);
 // Set up static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Configure Multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Configure Multer to use Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'mukesh-graphics-erp',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp']
   }
 });
 const upload = multer({ storage: storage });
 
 // File upload endpoint
-app.post('/api/upload', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl, filename: req.file.originalname });
+app.post('/api/upload', (req, res) => {
+  upload.single('file')(req, res, function (err) {
+    if (err) {
+      console.error("Upload error full detail:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+      return res.status(500).json({ error: err.message || JSON.stringify(err) });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    // Cloudinary returns the full URL in req.file.path
+    res.json({ url: req.file.path, filename: req.file.originalname });
+  });
 });
 
 // Module CRUD routes
