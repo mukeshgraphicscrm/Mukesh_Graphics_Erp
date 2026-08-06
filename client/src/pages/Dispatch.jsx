@@ -71,8 +71,8 @@ export default function Dispatch() {
           <button className="text-[#1b2f63] hover:text-[#112046] transition-colors bg-blue-50 p-1 rounded" title="View Map Location" onClick={(e) => e.stopPropagation()}>
             <MapPin className="w-4 h-4" />
           </button>
-          <button 
-            className="text-red-400 hover:text-red-600 transition-colors bg-red-50 p-1 rounded" 
+          <button
+            className="text-red-400 hover:text-red-600 transition-colors bg-red-50 p-1 rounded"
             title="Delete Dispatch"
             onClick={(e) => {
               e.stopPropagation();
@@ -95,7 +95,7 @@ export default function Dispatch() {
         <DataTable
           title="Dispatch"
           subtitle="Transporters, locations and delivery challans — every shipment tracked."
-          searchPlaceholder="Search dispatch #, transporter, location..."
+          searchPlaceholder="Search dispatch no., transporter, location..."
           actionButton={
             <button
               onClick={() => {
