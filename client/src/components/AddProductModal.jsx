@@ -213,8 +213,8 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl overflow-hidden my-4 sm:my-8 shrink-0">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">{isViewMode ? 'View Product' : (productToEdit ? 'Edit Product' : 'Add Product')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -355,7 +355,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
                   </div>
                 )}
 
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <input
                     type="file"
                     accept="image/*"
@@ -369,7 +369,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
             </div>
           </div>
 
-          <div className={`mt-8 flex ${productToEdit ? 'justify-between' : 'justify-end'} items-center space-x-3 border-t border-gray-100 pt-5`}>
+          <div className={`mt-8 flex flex-wrap ${productToEdit ? 'justify-between' : 'justify-end'} items-center gap-3 border-t border-gray-100 pt-5`}>
             {productToEdit && (
               <button
                 type="button"
@@ -381,7 +381,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
                 Delete Product
               </button>
             )}
-            <div className="flex space-x-3">
+            <div className="flex items-center gap-3">
               {isViewMode ? (
                 <>
                   <button
