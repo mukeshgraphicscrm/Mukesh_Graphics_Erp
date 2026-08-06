@@ -199,10 +199,16 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       const newData = { ...prev, [name]: upperValue };
 
       // Auto-fill customer if company name is selected
-      if (name === 'companyName' && upperValue) {
-        const matchedCustomer = customers.find(c => (c.name || '').toUpperCase() === upperValue);
-        if (matchedCustomer) {
-          newData.customerId = matchedCustomer.id;
+      if (name === 'companyName') {
+        if (activeTab === 'Customer Quotation') {
+          newData.productId = [];
+          newData.items = [];
+        }
+        if (upperValue) {
+          const matchedCustomer = customers.find(c => (c.name || '').toUpperCase() === upperValue);
+          if (matchedCustomer) {
+            newData.customerId = matchedCustomer.id;
+          }
         }
       }
       return newData;
@@ -338,42 +344,88 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
-                <CustomSelect
-                  name="companyName"
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  options={companyOptions}
-                  placeholder="Select Company"
-                  required
-                  disabled={isViewMode}
-                />
+                {activeTab === 'Lead Quotation' ? (
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    required
+                    disabled={isViewMode}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                    placeholder="Enter Company Name"
+                  />
+                ) : (
+                  <CustomSelect
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    options={companyOptions}
+                    placeholder="Select Company"
+                    required
+                    disabled={isViewMode}
+                  />
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
-                <CustomSelect
-                  name="customerId"
-                  value={formData.customerId}
-                  onChange={handleChange}
-                  options={customerOptions}
-                  placeholder="Select Customer"
-                  required
-                  disabled={isViewMode}
-                />
+                {activeTab === 'Lead Quotation' ? (
+                  <input
+                    type="text"
+                    name="customerId"
+                    value={formData.customerId}
+                    onChange={handleChange}
+                    required
+                    disabled={isViewMode}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                    placeholder="Enter Customer Name"
+                  />
+                ) : (
+                  <CustomSelect
+                    name="customerId"
+                    value={formData.customerId}
+                    onChange={handleChange}
+                    options={customerOptions}
+                    placeholder="Select Customer"
+                    required
+                    disabled={true}
+                  />
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-                <CustomSelect
-                  name="productId"
-                  value={formData.productId}
-                  onChange={handleChange}
-                  options={(formData.companyName ? products.filter(p => p.companyName === formData.companyName) : products).map(p => ({ value: p.id, label: p.name }))}
-                  placeholder="Select Products"
-                  required
-                  disabled={isViewMode || !formData.companyName}
-                  isMulti={true}
-                />
+                {activeTab === 'Lead Quotation' ? (
+                  <input
+                    type="text"
+                    name="productNameLead"
+                    value={formData.productId?.[0] || ''}
+                    onChange={(e) => {
+                       const val = e.target.value.toUpperCase();
+                       setFormData(prev => ({
+                         ...prev,
+                         productId: [val],
+                         items: [{ productId: val, specs: prev.items?.[0]?.specs || '', qty: prev.items?.[0]?.qty || '', price: prev.items?.[0]?.price || '' }]
+                       }));
+                    }}
+                    required
+                    disabled={isViewMode}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                    placeholder="Enter Product Name"
+                  />
+                ) : (
+                  <CustomSelect
+                    name="productId"
+                    value={formData.productId}
+                    onChange={handleChange}
+                    options={(formData.companyName ? products.filter(p => p.companyName === formData.companyName) : products).map(p => ({ value: p.id, label: p.name }))}
+                    placeholder="Select Products"
+                    required
+                    disabled={isViewMode || !formData.companyName}
+                    isMulti={true}
+                  />
+                )}
               </div>
 
               {activeTab === 'Lead Quotation' && (
@@ -394,7 +446,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
             {formData.items && formData.items.length > 0 && (
               <div className="mt-6 space-y-6">
                 {formData.items.map((item, index) => {
-                  const productName = products.find(p => p.id === item.productId)?.name || 'Product';
+                  const productName = activeTab === 'Lead Quotation' ? (item.productId || 'Product') : (products.find(p => p.id === item.productId)?.name || 'Product');
                   return (
                     <div key={item.productId} className="border-t border-gray-100 pt-4">
                       <h3 className="text-sm font-bold text-[#E8A33D] mb-3">{productName}</h3>
