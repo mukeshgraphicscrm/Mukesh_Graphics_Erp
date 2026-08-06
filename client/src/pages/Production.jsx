@@ -81,49 +81,49 @@ export default function Production() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-brand-line">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-brand-line">
           <div>
-            <p className="text-sm font-medium text-gray-500">Active Jobs</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{processedJobs.length}</p>
+            <p className="text-xs font-medium text-gray-500">Active Jobs</p>
+            <p className="text-xl font-bold text-gray-900 mt-1">{processedJobs.length}</p>
           </div>
-          <Settings className="w-8 h-8 text-brand-line opacity-20" />
+          <Settings className="w-6 h-6 text-brand-line opacity-20" />
         </div>
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-green-500">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-green-500">
           <div>
-            <p className="text-sm font-medium text-gray-500">On Schedule</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'On Schedule').length}</p>
+            <p className="text-xs font-medium text-gray-500">On Schedule</p>
+            <p className="text-xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'On Schedule').length}</p>
           </div>
-          <Clock className="w-8 h-8 text-green-500 opacity-20" />
+          <Clock className="w-6 h-6 text-green-500 opacity-20" />
         </div>
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-amber-500">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-amber-500">
           <div>
-            <p className="text-sm font-medium text-gray-500">At Risk</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'At Risk').length}</p>
+            <p className="text-xs font-medium text-gray-500">At Risk</p>
+            <p className="text-xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'At Risk').length}</p>
           </div>
-          <AlertTriangle className="w-8 h-8 text-amber-500 opacity-20" />
+          <AlertTriangle className="w-6 h-6 text-amber-500 opacity-20" />
         </div>
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-red-500">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-red-500">
           <div>
-            <p className="text-sm font-medium text-gray-500">Delayed</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'Delayed').length}</p>
+            <p className="text-xs font-medium text-gray-500">Delayed</p>
+            <p className="text-xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'Delayed').length}</p>
           </div>
-          <AlertTriangle className="w-8 h-8 text-red-500 opacity-20" />
+          <AlertTriangle className="w-6 h-6 text-red-500 opacity-20" />
         </div>
       </div>
 
       {/* Production Pipeline Tiles */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 overflow-x-auto">
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Production Pipeline</h3>
-        <div className="flex space-x-4 min-w-max">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 overflow-x-auto">
+        <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-3">Production Pipeline</h3>
+        <div className="flex space-x-3 min-w-max">
           {stages.map((stage) => {
             const count = processedJobs.filter(j => j.stage === stage.key).length;
             return (
-              <div key={stage.id} className="flex-1 min-w-[150px] bg-gray-50 border border-gray-200 rounded-lg p-4 relative overflow-hidden">
+              <div key={stage.id} className="flex-1 min-w-[120px] bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 relative overflow-hidden">
                 <div className="relative z-10">
-                  <p className="font-semibold text-gray-900 text-sm">{stage.name}</p>
-                  <p className="text-2xl font-bold text-brand-accent mt-2">{count}</p>
-                  <p className="text-xs text-gray-500 mt-1">Active jobs</p>
+                  <p className="font-medium text-gray-900 text-[13px] leading-tight">{stage.name}</p>
+                  <p className="text-lg font-bold text-brand-accent mt-1">{count}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">Active jobs</p>
                 </div>
               </div>
             );
