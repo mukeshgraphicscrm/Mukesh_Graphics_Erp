@@ -3,17 +3,23 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
+  const { currentUser } = useAuth();
+
   const [formData, setFormData] = useState({
     company: '',
+    contactPerson: '',
     city: '',
     state: '',
     products: '',
+    employee: currentUser?.profile?.name || '',
     stage: 'New Inquiry',
     lostReason: '',
     followUps: [{ date: '', time: '', notes: '' }]
   });
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -21,14 +27,26 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
     if (isOpen) {
       setFormData({
         company: '',
+        contactPerson: '',
         city: '',
         state: '',
         products: '',
+        employee: currentUser?.profile?.name || '',
         stage: 'New Inquiry',
         lostReason: '',
         followUps: [{ date: '', time: '', notes: '' }]
       });
       setError(null);
+      
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error('Error fetching users:', err);
+        }
+      };
+      fetchUsers();
     }
   }, [isOpen]);
 
@@ -61,7 +79,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: (name === 'stage' || name === 'date' || name === 'time') ? value : value.toUpperCase()
+      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time') ? value : value.toUpperCase()
     }));
   };
 
@@ -91,7 +109,10 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
       const res = await api.post('/leads', formData);
       if (onLeadAdded) onLeadAdded(res.data);
       toast.success('Lead added successfully!');
-      setFormData({ company: '', contactPerson: '', city: '', state: '', products: '', notes: '', stage: 'New Inquiry' });
+      setFormData({ 
+        company: '', contactPerson: '', city: '', state: '', products: '', employee: currentUser?.profile?.name || '', 
+        stage: 'New Inquiry', lostReason: '', followUps: [{ date: '', time: '', notes: '' }] 
+      });
       onClose();
     } catch (err) {
       console.error('Error adding lead:', err);
@@ -214,6 +235,19 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors resize-none"
                 placeholder="e.g. 53MM LID GREY BACK 350GSM PAPER"
               ></textarea>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Employees</label>
+              <CustomSelect
+                name="employee"
+                value={formData.employee}
+                onChange={handleChange}
+                options={[
+                  { label: 'Select Employee', value: '' },
+                  ...users.map(user => ({ label: user.name, value: user.name }))
+                ]}
+              />
             </div>
 
             <div className="space-y-4">

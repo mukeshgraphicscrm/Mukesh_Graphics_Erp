@@ -3,18 +3,23 @@ import { X, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDeleted, lead }) {
+  const { currentUser } = useAuth();
+
   const [formData, setFormData] = useState({
     company: '',
     contactPerson: '',
     city: '',
     state: '',
     products: '',
+    employee: '',
     stage: 'New Inquiry',
     lostReason: '',
     followUps: [{ date: '', time: '', notes: '' }],
   });
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -27,6 +32,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
         city: lead.city || '',
         state: lead.state || '',
         products: lead.products || '',
+        employee: lead.employee || currentUser?.profile?.name || '',
         stage: lead.stage || 'New Inquiry',
         lostReason: lead.lostReason || '',
         followUps: lead.followUps && lead.followUps.length > 0 
@@ -36,7 +42,21 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
               : [{ date: '', time: '', notes: '' }]),
       });
     }
-  }, [lead]);
+  }, [lead, currentUser]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error('Error fetching users:', err);
+        }
+      };
+      fetchUsers();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -67,7 +87,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: (name === 'stage' || name === 'date' || name === 'time') ? value : value.toUpperCase()
+      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time') ? value : value.toUpperCase()
     }));
   };
 
@@ -238,6 +258,19 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors resize-none"
                 placeholder="e.g. 53MM LID GREY BACK 350GSM PAPER"
               ></textarea>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Employees</label>
+              <CustomSelect
+                name="employee"
+                value={formData.employee}
+                onChange={handleChange}
+                options={[
+                  { label: 'Select Employee', value: '' },
+                  ...users.map(user => ({ label: user.name, value: user.name }))
+                ]}
+              />
             </div>
 
             <div className="space-y-4">
