@@ -3,6 +3,7 @@ import { Settings, User, Calendar, Clock, AlertTriangle, Plus } from 'lucide-rea
 import api from '../lib/api';
 import CreateJobModal from '../components/CreateJobModal';
 import ScheduleDispatchModal from '../components/ScheduleDispatchModal';
+import CustomSelect from '../components/CustomSelect';
 const stages = [
   { id: 1, name: 'Printing', key: 'Printing' },
   { id: 2, name: 'Lamination', key: 'Lamination' },
@@ -21,6 +22,10 @@ export default function Production() {
   
   const [isScheduleDispatchOpen, setIsScheduleDispatchOpen] = useState(false);
   const [dispatchInitialData, setDispatchInitialData] = useState(null);
+
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
 
   const handleEditJob = (job) => {
     setEditingJob(job);
@@ -43,7 +48,7 @@ export default function Production() {
   today.setHours(0, 0, 0, 0);
 
   const processedJobs = jobs.map(job => {
-    let derivedStatus = job.status;
+    let derivedStatus = job.status || 'On Schedule';
     if (job.deadline) {
       const deadlineDate = new Date(job.deadline);
       deadlineDate.setHours(0, 0, 0, 0);
@@ -55,9 +60,31 @@ export default function Production() {
         derivedStatus = 'Delayed';
       } else if (diffDays >= 0 && diffDays <= 3 && Number(job.progress) < 90) {
         derivedStatus = 'At Risk';
+      } else {
+        derivedStatus = 'On Schedule';
       }
     }
     return { ...job, displayStatus: derivedStatus };
+  });
+
+  const filteredJobs = processedJobs.filter(job => {
+    let match = true;
+    if (statusFilter !== 'All' && job.displayStatus !== statusFilter) {
+      match = false;
+    }
+    if (fromDate) {
+      if (!job.deadline || new Date(job.deadline) < new Date(fromDate)) match = false;
+    }
+    if (toDate) {
+      if (!job.deadline) {
+        match = false;
+      } else {
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        if (new Date(job.deadline) > end) match = false;
+      }
+    }
+    return match;
   });
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Production Floor...</div>;
@@ -133,9 +160,41 @@ export default function Production() {
 
       {/* Active Job Cards List */}
       <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Active Job Cards</h3>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
+          <h3 className="text-lg font-bold text-gray-900">Active Job Cards</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center space-x-2">
+              <input 
+                type="date" 
+                className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent shadow-sm"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+              <span className="text-gray-400 font-medium">-</span>
+              <input 
+                type="date" 
+                className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent shadow-sm"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+            </div>
+            <div className="w-[160px]">
+              <CustomSelect 
+                name="statusFilter"
+                options={[
+                  { label: 'All Status', value: 'All' },
+                  { label: 'On Schedule', value: 'On Schedule' },
+                  { label: 'At Risk', value: 'At Risk' },
+                  { label: 'Delayed', value: 'Delayed' }
+                ]}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
         <div className="flex flex-col space-y-4">
-          {processedJobs.slice().sort((a, b) => (a.jobCardNo || '').localeCompare(b.jobCardNo || '')).map((job) => {
+          {filteredJobs.slice().sort((a, b) => (a.jobCardNo || '').localeCompare(b.jobCardNo || '')).map((job) => {
             const currentStageIndex = stages.findIndex(s => s.key === job.stage);
             const getInitials = (name) => {
               if (!name) return 'NA';
@@ -219,9 +278,9 @@ export default function Production() {
               </div>
             );
           })}
-          {jobs.length === 0 && (
+          {filteredJobs.length === 0 && (
             <div className="py-12 text-center text-gray-500 bg-white rounded-lg border border-gray-200">
-              No active job cards found.
+              No active job cards found matching the criteria.
             </div>
           )}
         </div>
