@@ -429,25 +429,25 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
               </div>
             </div>
 
-            <div className={`px-6 py-4 flex ${orderToEdit ? 'justify-between' : 'justify-end'} items-center border-t border-gray-100 bg-gray-50 flex-shrink-0`}>
+            <div className={`px-6 py-4 flex flex-col-reverse sm:flex-row ${orderToEdit ? 'sm:justify-between' : 'sm:justify-end'} items-stretch sm:items-center gap-3 border-t border-gray-100 bg-gray-50 flex-shrink-0`}>
               {orderToEdit && (
                 <button
                   type="button"
                   onClick={handleDeleteClick}
                   disabled={loading}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                  className="flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 w-full sm:w-auto"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Order
+                  <span className="whitespace-nowrap">Delete Order</span>
                 </button>
               )}
-              <div className="flex space-x-3">
+              <div className="flex gap-3 w-full sm:w-auto">
                 {isViewMode ? (
                   <>
                     <button
                       type="button"
                       onClick={onClose}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
                     >
                       Close
                     </button>
@@ -457,7 +457,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                         e.preventDefault();
                         setIsViewMode(false);
                       }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors"
+                      className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors whitespace-nowrap"
                     >
                       Edit Order
                     </button>
@@ -468,14 +468,14 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                       type="button"
                       onClick={onClose}
                       disabled={loading}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={loading}
-                      className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50"
+                      className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50 whitespace-nowrap"
                     >
                       {loading ? 'Saving...' : (orderToEdit ? 'Save Changes' : 'Create Order')}
                     </button>

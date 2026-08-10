@@ -330,29 +330,29 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
             </div>
           </div>
 
-          <div className="mt-8 flex justify-between items-center border-t border-gray-100 pt-5">
+          <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-between items-stretch sm:items-center gap-3 border-t border-gray-100 pt-5">
             <button
               type="button"
               onClick={confirmDelete}
               disabled={loading}
-              className="flex items-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-100 rounded-md hover:bg-red-100 transition-colors"
+              className="flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-100 rounded-md hover:bg-red-100 transition-colors w-full sm:w-auto"
             >
               <Trash2 className="w-4 h-4 mr-1.5" />
-              Delete Lead
+              <span className="whitespace-nowrap">Delete Lead</span>
             </button>
-            <div className="flex space-x-3">
+            <div className="flex gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-[#1b2f63] rounded-md hover:bg-[#112046] transition-colors disabled:opacity-50"
+                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-[#1b2f63] rounded-md hover:bg-[#112046] transition-colors disabled:opacity-50 whitespace-nowrap"
               >
                 {loading ? 'Updating...' : 'Update Lead'}
               </button>

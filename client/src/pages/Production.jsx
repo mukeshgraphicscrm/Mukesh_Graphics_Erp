@@ -208,10 +208,10 @@ export default function Production() {
                 className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md cursor-pointer transition-all p-6"
               >
                 {/* Top Row */}
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center space-x-3">
+                <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <span className="text-sm font-medium text-gray-500">{job.jobCardNo}</span>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                    <span className={`whitespace-nowrap px-2 py-0.5 text-xs font-semibold rounded ${
                       job.displayStatus === 'On Schedule' ? 'bg-emerald-100 text-emerald-700' :
                       job.displayStatus === 'At Risk' ? 'bg-amber-100 text-amber-700' :
                       job.displayStatus === 'Delayed' ? 'bg-red-100 text-red-700' :
@@ -220,11 +220,11 @@ export default function Production() {
                       {job.displayStatus}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold shrink-0">
                       {getInitials(job.customerName)}
                     </div>
-                    <span className="px-3 py-1 bg-red-50 text-red-500 text-xs font-medium rounded-full border border-red-100">
+                    <span className="whitespace-nowrap px-3 py-1 bg-red-50 text-red-500 text-xs font-medium rounded-full border border-red-100">
                       {job.stage}
                     </span>
                   </div>
