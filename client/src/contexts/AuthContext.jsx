@@ -5,6 +5,7 @@ import {
   onAuthStateChanged 
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { Loader2 } from 'lucide-react';
 
 import api from '../lib/api';
 
@@ -63,7 +64,15 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+          <Loader2 className="h-12 w-12 text-indigo-600 animate-spin mb-4" />
+          <h2 className="text-xl font-semibold text-gray-700">Loading your workspace...</h2>
+          <p className="text-gray-500 mt-2">Please wait while we connect to the server.</p>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }
