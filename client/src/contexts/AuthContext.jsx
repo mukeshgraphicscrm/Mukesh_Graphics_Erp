@@ -30,27 +30,27 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        setCurrentUser({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          profile: null
+        });
+        setLoading(false);
+
         try {
           const res = await api.get(`/users/${user.uid}`);
-          setCurrentUser({
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
+          setCurrentUser(prev => prev ? {
+            ...prev,
             profile: res.data
-          });
+          } : null);
         } catch (error) {
           console.error('Failed to fetch user profile data:', error);
-          setCurrentUser({
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            profile: null
-          });
         }
       } else {
         setCurrentUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return unsubscribe;
