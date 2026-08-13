@@ -13,6 +13,8 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
     contactPerson: '',
     city: '',
     state: '',
+    phone: '',
+    email: '',
     leadSource: 'Website',
     products: '',
     employee: '',
@@ -32,6 +34,8 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
         contactPerson: lead.contactPerson || '',
         city: lead.city || '',
         state: lead.state || '',
+        phone: lead.phone || '',
+        email: lead.email || '',
         leadSource: lead.leadSource || 'Website',
         products: lead.products || '',
         employee: lead.employee || currentUser?.profile?.name || '',
@@ -87,9 +91,10 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const shouldUppercase = !['city', 'state', 'phone', 'email'].includes(name);
     setFormData(prev => ({
       ...prev,
-      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource') ? value : value.toUpperCase()
+      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource') ? value : shouldUppercase ? value.toUpperCase() : value
     }));
   };
 
@@ -192,11 +197,35 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
+                  placeholder="e.g. +91 98765 43210"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
+                  placeholder="e.g. name@example.com"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                 <input
                   type="text"
                   name="city"
-                  required
                   value={formData.city}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
@@ -204,11 +233,10 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                 <input
                   type="text"
                   name="state"
-                  required
                   value={formData.state}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"

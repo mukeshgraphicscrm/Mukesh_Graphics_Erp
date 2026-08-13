@@ -85,6 +85,14 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEditClick }) {
               <p className="text-base font-semibold text-gray-900">{lead.contactPerson || '-'}</p>
             </div>
             <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Phone Number</p>
+              <p className="text-base font-semibold text-gray-900">{lead.phone || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Email</p>
+              <p className="text-base font-semibold text-gray-900 break-all">{lead.email || '-'}</p>
+            </div>
+            <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Location</p>
               <p className="text-base font-semibold text-gray-900">
                 {lead.city || lead.state ? `${lead.city}${lead.city && lead.state ? ', ' : ''}${lead.state}` : '-'}
