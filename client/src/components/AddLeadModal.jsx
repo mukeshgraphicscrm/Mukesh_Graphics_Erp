@@ -82,7 +82,16 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+
+    if (name === 'phone') {
+      value = value.replace(/\D/g, '').slice(0, 10);
+    }
+
+    if (name === 'email') {
+      value = value.trim();
+    }
+
     const shouldUppercase = !['city', 'state', 'phone', 'email'].includes(name);
     setFormData(prev => ({
       ...prev,
@@ -112,8 +121,32 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const phoneValue = (formData.phone || '').trim();
+    const emailValue = (formData.email || '').trim();
+
+    if (phoneValue && !/^\d{10}$/.test(phoneValue)) {
+      setError('Phone number must be exactly 10 digits.');
+      toast.error('Phone number must be exactly 10 digits.');
+      setLoading(false);
+      return;
+    }
+
+    if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+      setError('Email must be a valid email address.');
+      toast.error('Email must be a valid email address.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await api.post('/leads', formData);
+      const sanitizedData = {
+        ...formData,
+        phone: phoneValue,
+        email: emailValue,
+      };
+
+      const res = await api.post('/leads', sanitizedData);
       if (onLeadAdded) onLeadAdded(res.data);
       toast.success('Lead added successfully!');
       setFormData({ 
@@ -176,12 +209,14 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input
-                  type="tel"
+                  type="text"
+                  inputMode="numeric"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
+                  maxLength={10}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
-                  placeholder="e.g. +91 98765 43210"
+                  placeholder="e.g. 9876543210"
                 />
               </div>
               <div>
