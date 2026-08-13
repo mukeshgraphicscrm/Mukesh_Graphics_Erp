@@ -3,25 +3,29 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 require('dotenv').config();
-const { initializeApp, cert } = require('firebase-admin/app');
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
 
 // Initialize Firebase Admin (Only if env vars are present)
 if (process.env.FIREBASE_PROJECT_ID) {
   try {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-    console.log('Firebase Admin initialized successfully.');
+    if (!getApps().length) {
+      initializeApp({
+        credential: cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+      });
+      console.log('Firebase Admin initialized successfully.');
+    }
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
   }
 } else {
   console.warn('Firebase Admin not initialized: Missing FIREBASE_PROJECT_ID environment variable.');
 }
+
+const { syncContactFormLeads } = require('./leadAutomation');
 
 const app = express();
 
@@ -83,7 +87,8 @@ app.post('/api/upload', (req, res) => {
 const collections = [
   'customers', 'leads', 'quotations', 'orders', 'products',
   'artworks', 'productionJobs', 'inventory', 'suppliers',
-  'purchaseOrders', 'grn', 'dispatches', 'invoices', 'categories'
+  'purchaseOrders', 'grn', 'dispatches', 'invoices', 'categories',
+  'contact form', 'contact_form'
 ];
 
 app.use('/api/users', usersRouter);
@@ -93,6 +98,17 @@ collections.forEach(collection => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+syncContactFormLeads().catch((error) => {
+  console.error('Initial contact form sync failed:', error);
+});
+
+setInterval(() => {
+  syncContactFormLeads().catch((error) => {
+    console.error('Scheduled contact form sync failed:', error);
+  });
+}, 15000);
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

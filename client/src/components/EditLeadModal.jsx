@@ -13,6 +13,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
     contactPerson: '',
     city: '',
     state: '',
+    leadSource: 'Website',
     products: '',
     employee: '',
     stage: 'New Inquiry',
@@ -31,6 +32,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
         contactPerson: lead.contactPerson || '',
         city: lead.city || '',
         state: lead.state || '',
+        leadSource: lead.leadSource || 'Website',
         products: lead.products || '',
         employee: lead.employee || currentUser?.profile?.name || '',
         stage: lead.stage || 'New Inquiry',
@@ -87,7 +89,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time') ? value : value.toUpperCase()
+      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource') ? value : value.toUpperCase()
     }));
   };
 
@@ -213,6 +215,26 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
                   placeholder="e.g. Maharashtra"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Lead Source <span className="text-red-500">*</span></label>
+              <CustomSelect
+                name="leadSource"
+                value={formData.leadSource}
+                onChange={handleChange}
+                options={[
+                  { label: 'Website', value: 'Website' },
+                  { label: 'Digital Marketing', value: 'Digital Marketing' },
+                  { label: 'Call', value: 'Call' },
+                  { label: 'Email', value: 'Email' },
+                  { label: 'WhatsApp', value: 'WhatsApp' },
+                  { label: 'Referral', value: 'Referral' },
+                  { label: 'Social Media', value: 'Social Media' },
+                  { label: 'Walk-in', value: 'Walk-in' },
+                  { label: 'Other', value: 'Other' }
+                ]}
+              />
             </div>
 
             <div>

@@ -90,6 +90,14 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEditClick }) {
                 {lead.city || lead.state ? `${lead.city}${lead.city && lead.state ? ', ' : ''}${lead.state}` : '-'}
               </p>
             </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Lead Source</p>
+              <p className="text-base font-semibold text-gray-900">{lead.leadSource || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Employee</p>
+              <p className="text-base font-semibold text-gray-900">{lead.employee || '-'}</p>
+            </div>
           </div>
 
           {lead.products && (

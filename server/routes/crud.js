@@ -1,6 +1,7 @@
 const express = require('express');
 const { db } = require('../firebase');
 const mockData = require('../mockData');
+const { syncContactFormLeads, isContactFormCollection } = require('../leadAutomation');
 
 // Factory function to create basic CRUD routes for a given collection
 const createCrudRouter = (collectionName) => {
@@ -54,6 +55,11 @@ const createCrudRouter = (collectionName) => {
     try {
       const data = { ...req.body, createdAt: new Date().toISOString() };
       const docRef = await db.collection(collectionName).add(data);
+
+      if (isContactFormCollection(collectionName)) {
+        await syncContactFormLeads();
+      }
+
       res.status(201).json({ id: docRef.id, ...data });
     } catch (error) {
       console.error(`Error creating ${collectionName}:`, error);

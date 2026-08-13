@@ -25,16 +25,25 @@ export default function Leads() {
   const [pendingLostLead, setPendingLostLead] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const fetchLeads = async () => {
+    try {
+      const res = await api.get('/leads');
+      setLeads(res.data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching leads:', err);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    api.get('/leads')
-      .then(res => {
-        setLeads(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching leads:', err);
-        setLoading(false);
-      });
+    fetchLeads();
+
+    const intervalId = setInterval(() => {
+      fetchLeads();
+    }, 6000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const [expandedStages, setExpandedStages] = useState({
